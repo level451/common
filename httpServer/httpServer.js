@@ -1,7 +1,9 @@
 // options useHttps : false
-console.log(__dirname)
 
-module.exports = function(options) {
+const webSocketServer = require('./webSocketServer')
+webSocketServer.on('test',function(x){console.log(x)})
+module.exports.webSocketServer = webSocketServer
+module.exports.start = function(options) {
 
     if (!options){options = {}}
     if (!options.useHttps) options.useHttps = false;
@@ -70,7 +72,7 @@ module.exports = function(options) {
             key: fs.readFileSync('certs/privkey.pem'),
             cert: fs.readFileSync('certs/fullchain.pem'),
             ca: fs.readFileSync('certs/chain.pem')
-        }, app).listen(((localSettings) ? localSettings.webServer.port : 2112), function (err) {
+        }, app).listen(((options.port) ? options.port : 2112), function (err) {
             if (err) {
                 throw err
             }
@@ -81,7 +83,7 @@ module.exports = function(options) {
 
     } else
     {
-        var server = http.createServer(app).listen(2112,function(err){
+        var server = http.createServer(app).listen(((options.port) ? options.port : 2112),function(err){
             if (err){
                 throw err
             }
