@@ -1,0 +1,7 @@
+{
+  "name": "@level451/connector",
+  "version": "1.0.0",
+  "dependencies": {
+    "ws": "^6.2.0"
+  }
+}

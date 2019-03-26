@@ -11,7 +11,6 @@ module.exports.startWebSocketServer = function (server) {
     const wss = new WebSock.Server({server});
 
     wss.on('connection', function connection(ws, req) {
-        webSocketEmitter.emit('test', 'test')
         const parameters = require('url').parse(req.url, true).query;
 
         if (!parameters.mac && !parameters.browser) { //reject websocket wequests that are not from approved mac addresses
@@ -25,10 +24,16 @@ module.exports.startWebSocketServer = function (server) {
         ws.isAlive = true;
         ws.remoteAddress = ws._socket.remoteAddress;
         ws.id = (ws.sid) ? ws.sid : ws.mac;
-        console.log('Connected Clients:' + wss.clients.size, ws.id, ws.mac)
+        console.log('Connected Clients:' + wss.clients.size, ws.id)
 
         if (parameters.subscribeEvents) {
-            ws.subscribeEvents = JSON.parse(parameters.subscribeEvents)
+            try {
+                ws.subscribeEvents = JSON.parse(parameters.subscribeEvents)
+                subscribeEvents(ws)
+
+            } catch (e) {
+            console.log('Failed to parse subscribed events',parameters.subscribeEvents)
+            }
             subscribeEvents(ws)
         }
 
@@ -37,23 +42,31 @@ module.exports.startWebSocketServer = function (server) {
 
         ws.on('message', function incoming(message) {
             // console.log(message)
-            var data = JSON.parse(message)
-            webSocketEmitter.emit(data.emitterId, data, ws.id)
-            if (global[data.emitterId] instanceof require("events").EventEmitter) {
-                global[data.emitterId].emit(data.type, data[data.type])
+            try {
+                var data = JSON.parse(message)
+            } catch (e) {
+                console.log('failed to parse websocket data:', e)
+            }
 
-            } else {
-                global[data.emitterId] = new EventEmitter();
-                console.log('New emiter created', data.emitterId)
-                // check to see if anyone subscribed before this existed
-                for (var each in webSocket) {
+            if (data.emitter) { // got message from reomte emitter
 
-                    if (webSocket[each].subscribeEvents) {
+                if (global[data.emitter] instanceof require("events").EventEmitter) {
+                    // it's an emitter - emit the message
+                    global[data.emitter].emit(data.eventName, ...data.args)
+                } else {
+                    global[data.emitter] = new EventEmitter();
+                    console.log('New emiter created', data.emitter)
+                    // check to see if anyone subscribed before this existed
+                    for (var each in webSocket) {
 
-                        subscribeEvents(webSocket[each])
+                        if (webSocket[each].subscribeEvents) {
+
+                            subscribeEvents(webSocket[each])
+                        }
                     }
+                    global[data.emitter].emit(data.eventName, ...data.args)
+
                 }
-                global[data.emitterId].emit(data.type, data[data.type])
             }
         });
         ws.on('pong', heartbeat);
@@ -104,18 +117,21 @@ function subscribeEvents(ws) {
             // event the was subscribe to and the websocket to send it to
 
             // store the function name so we can unsuscribe later
-            ws.subscribeEvents[i].function = function (evtData, f) {
+            ws.subscribeEvents[i].function = function (...args) {
+
                 if (this.ws.readyState == 1) {
                     try {
-                        this.ws.send(JSON.stringify({[this.event]: evtData}))
+                        this.ws.send(JSON.stringify({emitter: this.emitter, eventName: this.eventName, args: args}))
 
+                        //this.ws.send(JSON.stringify({[this.event]: evtData}))
+                        // console.log('event:'+this.object)
                     } catch (e) {
                         console.log('Failed to send websocket', webSocket[mac].readyState, mac, data)
                     }
 
                 }
 
-            }.bind({object: subscribeObject, event: ws.subscribeEvents[i][subscribeObject], ws: ws})
+            }.bind({emitter: subscribeObject, eventName: ws.subscribeEvents[i][subscribeObject], ws: ws})
 
             // subscribe with the emietter.on to the saved function
             global[subscribeObject].on(ws.subscribeEvents[i][subscribeObject], ws.subscribeEvents[i].function)
@@ -123,7 +139,7 @@ function subscribeEvents(ws) {
             console.log('Bound Websocket ' + ws.id + ' to event ' + ws.subscribeEvents[i][subscribeObject] + ' in object:' + subscribeObject)
         } else {
             if (ws.subscribeEvents[i].function) {
-                console.log('Already Bound Websocket ' + ws.id + ' to event ' + ws.subscribeEvents[i][subscribeObject] + ' in object:' + subscribeObject )
+                console.log('Already Bound Websocket ' + ws.id + ' to event ' + ws.subscribeEvents[i][subscribeObject] + ' in object:' + subscribeObject)
 
             } else {
                 console.log('FAILED to bind Bound Websocket ' + ws.id + ' to event ' + ws.subscribeEvents[i][subscribeObject] + ' in object:' + subscribeObject + ' NOT an Event Emitter')
@@ -137,9 +153,9 @@ function unsubscribeEvents(ws) {
     if (ws.subscribeEvents) {
         for (var i = 0; i < ws.subscribeEvents.length; ++i) {
             let subscribeObject = Object.getOwnPropertyNames(ws.subscribeEvents[i])[0] // parse the property name
-
+            // unbind will fail is the object is not an emiter or the object was not bound
             if (global[subscribeObject] instanceof require("events").EventEmitter && typeof (ws.subscribeEvents[i].function) == 'function') {
-                console.log('UN-Bound Websocket ' + ws.id + ' to event ' + ws.subscribeEvents[i][subscribeObject] + ' in object:' + subscribeObject, ws.subscribeEvents[i].function)
+                console.log('UN-Bound Websocket ' + ws.id + ' to event ' + ws.subscribeEvents[i][subscribeObject] + ' in object:' + subscribeObject)
 
                 global[subscribeObject].removeListener(ws.subscribeEvents[i][subscribeObject], ws.subscribeEvents[i].function)
 
