@@ -55,7 +55,6 @@ module.exports.startWebSocketServer = function (server) {
                 }
                 global[data.emitterId].emit(data.type, data[data.type])
             }
-
         });
         ws.on('pong', heartbeat);
         ws.on('close', function () {
