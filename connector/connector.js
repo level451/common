@@ -31,9 +31,9 @@ function connect() {
         } catch (e) {
             console.log('parse error',e)
         }
-        if (obj.remoteFunction){
+        if (obj.remoteAsyncFunction){
             // call to an Asyncfunction from the remote
-            global[obj.emitterName][obj.eventName](...obj.args).then(function(...args){
+            global[obj.emitterName][obj.functionName](...obj.args).then(function(...args){
                console.log('--',obj)
                 remoteEmit(obj.emitterName,obj.returnEventName,...args)
             })
@@ -91,7 +91,12 @@ module.exports.remoteEmit = function (emitter, eventName, ...args) {
 
 
 }
-module.exports.sendObjectData = function (emitterName, emitter) {
+module.exports.sendObjectDataToRemote = function (emitterName, emitter) {
+    // send the object definition data to the remote
+    // called from parent object example:
+    // connector.on('connected',()=>{
+    //     connector.sendObjectDataToRemote('ted',ted)
+    // })
     let emitterDefinition = {
         emitterDefinion: true,
         emitterName: emitterName,
@@ -124,6 +129,7 @@ function send(d) {
 
 }
 function remoteEmit(emitter, eventName, ...args) {
+    // sends the emitted event to the obj clone on the remote
     if (ws.readyState == 1) {
         console.log(eventName)
         try {

@@ -24,6 +24,7 @@ module.exports.startWebSocketServer = function (server) {
         ws.isAlive = true;
         ws.remoteAddress = ws._socket.remoteAddress;
         ws.id = (ws.sid) ? ws.sid : ws.mac;
+        if (webSocket[ws.id]){ws.id += Math.random().toString() }
         console.log('Connected Clients:' + wss.clients.size, ws.id)
 
         if (parameters.subscribeEvents) {
@@ -48,14 +49,14 @@ module.exports.startWebSocketServer = function (server) {
             }
 
             if (data.emitterDefinion) {
-                createGlobalEmitterObject(data, ws)
-                ted.asyncTest('call ted test function','val2',3).then(function (s) {
-                    console.log('--------------',s)
-                })
-                ted.asyncTest('call ted test function','val2',3).then(function (s) {
-                    console.log('--------------',s)
-                })
 
+                createGlobalEmitterObject(data, ws)
+                ted.asyncTest('call ted test function', 'val2', 3).then(function (s) {
+                    console.log('--------------', s)
+                })
+                // ted.asyncTest('call ted test function','val2',3).then(function (s) {
+                //     console.log('--------------',s)
+                // })
 
 
             }
@@ -170,8 +171,8 @@ function unsubscribeEvents(ws) {
                 global[subscribeObject].removeListener(ws.subscribeEvents[i][subscribeObject], ws.subscribeEvents[i].function)
 
 
-            } else {
                 console.log('UN-Bound fail - not an emiter Websocket ' + ws.id + ' to event ' + ws.subscribeEvents[i][subscribeObject] + ' in object:' + subscribeObject)
+            } else {
             }
 
         }
@@ -180,36 +181,42 @@ function unsubscribeEvents(ws) {
 }
 
 function createGlobalEmitterObject(d, ws) {
-    console.log('Creating Global Emitter from remote')
+    console.log('Creating Global Emitter from remote object:'+d.emitterName)
     global[d.emitterName] = new EventEmitter();
-    global[d.emitterName].ws = ws
+    global[d.emitterName].ws = ws // attach the webSocket from the remote object to the new object
+    createGlobalEmitterObjectAsncyFunctions(d)
+}
+
+function createGlobalEmitterObjectAsncyFunctions(d) {
     for (functionToCreate of d.asyncFunctions) {
-        console.log('functionToCreate', functionToCreate)
+
+        console.log('functionToCreate', functionToCreate, d.emitterName)
         // this is the return hook function
         global[d.emitterName][functionToCreate] = async function (...args) {
-            global[d.emitterName].returnEventName = Math.random().toString();
+            var returnEventName = Math.random().toString();
+            //send the command to the remote
             if (this.ws.readyState == 1) {
                 try {
                     this.ws.send(JSON.stringify({
-                        remoteFunction: true,
+                        remoteAsyncFunction: true,
                         emitterName: d.emitterName,
-                        eventName: this.functionToCreate,
-                        returnEventName: global[d.emitterName].returnEventName,
+                        functionName: functionToCreate,
+                        returnEventName: returnEventName,
                         args: args
                     }))
-
-                    //this.ws.send(JSON.stringify({[this.event]: evtData}))
-                    // console.log('event:'+this.object)
                 } catch (e) {
-                    console.log('Failed to send websocket', e, this.readyState, this.ws.id, d)
+                    console.log('Failed to send websocket', e, this.readyState, this.ws.id)
                 }
-                return new Promise(function (resolve,emitterName) {
-                    console.log('promise created',global[d.emitterName].returnEventName)
-                    global[d.emitterName].once(global[d.emitterName].returnEventName, resolve)
+                // return a promise to be fulfilled when we get the data back
+                return new Promise(function (resolve) {
+                    global['ted'].once(returnEventName, resolve)
                 })
             }
 
-        }.bind({functionToCreate: functionToCreate, ws: ws, emitterName: d.emitterName})
+        }
+
+
+        //***************
     }
 
 }
