@@ -1,5 +1,7 @@
 {
   "name": "@level451/newConsole",
-  "version": "1.0.0",
+  "version": "0.7.0",
+  "main": "newConsole.js",
+  "author": "Todd Witzel",
   "dependencies": {}
 }

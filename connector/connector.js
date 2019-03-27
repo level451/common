@@ -21,19 +21,27 @@ function connect() {
     ws.on('open', heartbeat);
     ws.on('open', function () {
         console.log('connected to home')
-
+        wscEmitter.emit('connected')
     });
     ws.on('ping', heartbeat);
 
-    ws.on('message', function incoming(data) {
-        //dataProcessor(JSON.parse(data));
-        return;
+    ws.on('message', function incoming(d) {
+        try {
+            var obj = JSON.parse(d)
+        } catch (e) {
+            console.log('parse error',e)
+        }
+        if (obj.remoteFunction){
+            // call to an Asyncfunction from the remote
+            global[obj.emitterName][obj.eventName](...obj.args).then(function(...args){
+               console.log('--',obj)
+                remoteEmit(obj.emitterName,obj.returnEventName,...args)
+            })
 
-        setTimeout(function () {
-            ws.send(JSON.stringify({emitterId: data.emitterId, results: "sucess"}));
-        }, data.timeOut);
-        console.log(data);
-    });
+        }
+
+    })
+
     ws.on('close', function clear() {
         clearTimeout(this.pingTimeout);
         console.log('onclose - lost connection to master console');
@@ -68,19 +76,59 @@ function heartbeat() {
     }, 30000 + 1000);
 }
 
-module.exports.send = function (data) {
-    if (ws.readyState == 1) {
-        ws.send(data)
-    } else {
-        console.log('cant send socket closed', data)
-    }
-
-}
+module.exports.send = send()
 module.exports.remoteEmit = function (emitter, eventName, ...args) {
     if (ws.readyState == 1) {
 
         try {
             ws.send(JSON.stringify({emitter: emitter, eventName: eventName, args: args}))
+        } catch (e) {
+            console.log('send failure:', e)
+        }
+    } else {
+        console.log('cant send socket closed', args)
+    }
+
+
+}
+module.exports.sendObjectData = function (emitterName, emitter) {
+    let emitterDefinition = {
+        emitterDefinion: true,
+        emitterName: emitterName,
+        asyncFunctions: [],
+    };
+    for (var prop in emitter) {
+        if (emitter.hasOwnProperty(prop) && !prop.startsWith('_')) {
+            if (typeof emitter[prop] === 'function' && emitter[prop].constructor.name === 'AsyncFunction') {
+                console.log(emitter[prop].constructor.name)
+                console.log('asyncFunction Prop:', prop)
+                emitterDefinition.asyncFunctions.push(prop)
+            }
+        }
+    }
+    send(emitterDefinition)
+}
+
+function send(d) {
+    if (ws.readyState == 1) {
+        try {
+            ws.send(JSON.stringify(d))
+        } catch (e) {
+            console.log('cant send failed', e, d)
+
+        }
+    } else {
+        console.log('cant send socket closed', d)
+    }
+
+
+}
+function remoteEmit(emitter, eventName, ...args) {
+    if (ws.readyState == 1) {
+        console.log(eventName)
+        try {
+            ws.send(JSON.stringify({emitter: emitter, eventName: eventName, args: args}))
+            console.log('emitter',emitter,eventName,args)
         } catch (e) {
             console.log('send failure:', e)
         }

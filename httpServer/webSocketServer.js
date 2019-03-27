@@ -32,9 +32,8 @@ module.exports.startWebSocketServer = function (server) {
                 subscribeEvents(ws)
 
             } catch (e) {
-            console.log('Failed to parse subscribed events',parameters.subscribeEvents)
+                console.log('Failed to parse subscribed events', parameters.subscribeEvents)
             }
-            subscribeEvents(ws)
         }
 
         webSocket[ws.id] = ws;
@@ -48,14 +47,25 @@ module.exports.startWebSocketServer = function (server) {
                 console.log('failed to parse websocket data:', e)
             }
 
-            if (data.emitter) { // got message from reomte emitter
+            if (data.emitterDefinion) {
+                createGlobalEmitterObject(data, ws)
+                ted.asyncTest('call ted test function','val2',3).then(function (s) {
+                    console.log('--------------',s)
+                })
+                ted.asyncTest('call ted test function','val2',3).then(function (s) {
+                    console.log('--------------',s)
+                })
 
+
+
+            }
+            if (data.emitter) { // got message from reomte emitter
                 if (global[data.emitter] instanceof require("events").EventEmitter) {
                     // it's an emitter - emit the message
                     global[data.emitter].emit(data.eventName, ...data.args)
                 } else {
                     global[data.emitter] = new EventEmitter();
-                    console.log('New emiter created', data.emitter)
+                    console.log('New emiter created - should not happen now', data.emitter)
                     // check to see if anyone subscribed before this existed
                     for (var each in webSocket) {
 
@@ -167,4 +177,39 @@ function unsubscribeEvents(ws) {
         }
 
     }
+}
+
+function createGlobalEmitterObject(d, ws) {
+    console.log('Creating Global Emitter from remote')
+    global[d.emitterName] = new EventEmitter();
+    global[d.emitterName].ws = ws
+    for (functionToCreate of d.asyncFunctions) {
+        console.log('functionToCreate', functionToCreate)
+        // this is the return hook function
+        global[d.emitterName][functionToCreate] = async function (...args) {
+            global[d.emitterName].returnEventName = Math.random().toString();
+            if (this.ws.readyState == 1) {
+                try {
+                    this.ws.send(JSON.stringify({
+                        remoteFunction: true,
+                        emitterName: d.emitterName,
+                        eventName: this.functionToCreate,
+                        returnEventName: global[d.emitterName].returnEventName,
+                        args: args
+                    }))
+
+                    //this.ws.send(JSON.stringify({[this.event]: evtData}))
+                    // console.log('event:'+this.object)
+                } catch (e) {
+                    console.log('Failed to send websocket', e, this.readyState, this.ws.id, d)
+                }
+                return new Promise(function (resolve,emitterName) {
+                    console.log('promise created',global[d.emitterName].returnEventName)
+                    global[d.emitterName].once(global[d.emitterName].returnEventName, resolve)
+                })
+            }
+
+        }.bind({functionToCreate: functionToCreate, ws: ws, emitterName: d.emitterName})
+    }
+
 }
