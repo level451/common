@@ -1,0 +1,7 @@
+{
+  "name": "@level451/sharedLibrary",
+  "version": "0.7.0",
+  "main": "sharedLibrary.js",
+  "author": "Todd Witzel",
+  "dependencies": {}
+}

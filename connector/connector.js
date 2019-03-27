@@ -91,7 +91,7 @@ module.exports.remoteEmit = function (emitter, eventName, ...args) {
 
 
 }
-module.exports.sendObjectDataToRemote = function (emitterName, emitter) {
+module.exports.sendObjectDefinitionDataToRemote = function (emitterName, emitter) {
     // send the object definition data to the remote
     // called from parent object example:
     // connector.on('connected',()=>{

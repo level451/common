@@ -24,7 +24,9 @@ module.exports.startWebSocketServer = function (server) {
         ws.isAlive = true;
         ws.remoteAddress = ws._socket.remoteAddress;
         ws.id = (ws.sid) ? ws.sid : ws.mac;
-        if (webSocket[ws.id]){ws.id += Math.random().toString() }
+        if (webSocket[ws.id]) {
+            ws.id += Math.random().toString()
+        }
         console.log('Connected Clients:' + wss.clients.size, ws.id)
 
         if (parameters.subscribeEvents) {
@@ -51,9 +53,12 @@ module.exports.startWebSocketServer = function (server) {
             if (data.emitterDefinion) {
 
                 createGlobalEmitterObject(data, ws)
-                ted.asyncTest('call ted test function', 'val2', 3).then(function (s) {
-                    console.log('--------------', s)
-                })
+
+                if (typeof ted == 'object') {
+                    ted.asyncTest('call ted test function', 'val2', 3).then(function (s) {
+                        console.log('--------------', s)
+                    })
+                }
                 // ted.asyncTest('call ted test function','val2',3).then(function (s) {
                 //     console.log('--------------',s)
                 // })
@@ -69,9 +74,7 @@ module.exports.startWebSocketServer = function (server) {
                     console.log('New emiter created - should not happen now', data.emitter)
                     // check to see if anyone subscribed before this existed
                     for (var each in webSocket) {
-
                         if (webSocket[each].subscribeEvents) {
-
                             subscribeEvents(webSocket[each])
                         }
                     }
@@ -84,6 +87,27 @@ module.exports.startWebSocketServer = function (server) {
         ws.on('close', function () {
             // remove all eventlisteners we subscribed to
             unsubscribeEvents(ws)
+            if (this.globalEmitterObjectName){
+                console.log ('Removing Global Emitter Object:',this.globalEmitterObjectName)
+                // deleting globalEmitterObject should remove all listeners,
+                // but the listener functions need to be deleted
+                for (var each in webSocket) {
+                    if (webSocket[each].subscribeEvents) {
+                        for (var i = 0; i < webSocket[each].subscribeEvents.length; ++i) {
+                            let subscribeObject = Object.getOwnPropertyNames(webSocket[each].subscribeEvents[i])[0] // parse the property name
+
+                            if (subscribeObject == this.globalEmitterObjectName){
+                              delete webSocket[each].subscribeEvents[i].function
+                                console.log('Deleting this subscription',subscribeObject,webSocket[each].id)
+                            }
+                        }
+                    }
+                }
+
+                delete global[this.globalEmitterObjectName]
+            }
+
+            delete global[ws.globalEmitterObjectName]
             if (ws.id && webSocket[ws.id]) {
                 delete webSocket[ws.id];
                 console.log('Removeing websocket from active object', ws.id)
@@ -115,6 +139,7 @@ module.exports.startWebSocketServer = function (server) {
         this.isAlive = true;
     }
 }
+
 
 
 function subscribeEvents(ws) {
@@ -181,10 +206,21 @@ function unsubscribeEvents(ws) {
 }
 
 function createGlobalEmitterObject(d, ws) {
-    console.log('Creating Global Emitter from remote object:'+d.emitterName)
+    console.log('Creating Global Emitter from remote object:' + d.emitterName)
     global[d.emitterName] = new EventEmitter();
     global[d.emitterName].ws = ws // attach the webSocket from the remote object to the new object
+
+    ws.globalEmitterObjectName = d.emitterName;
     createGlobalEmitterObjectAsncyFunctions(d)
+    // check if subscriptions are pending for this object from before it was here
+    for (var each in webSocket) {
+        if (webSocket[each].subscribeEvents) {
+            // just try to resub everyone
+            subscribeEvents(webSocket[each])
+        }
+    }
+
+
 }
 
 function createGlobalEmitterObjectAsncyFunctions(d) {
