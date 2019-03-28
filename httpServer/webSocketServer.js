@@ -50,7 +50,7 @@ module.exports.startWebSocketServer = function (server) {
                 console.log('failed to parse websocket data:', e)
             }
 
-            if (data.emitterDefinion) {
+            if (data.emitterDefinition) {
 
                 createGlobalEmitterObject(data, ws)
 
@@ -171,7 +171,32 @@ function subscribeEvents(ws) {
 
             // subscribe with the emietter.on to the saved function
             global[subscribeObject].on(ws.subscribeEvents[i][subscribeObject], ws.subscribeEvents[i].function)
+//*****
 
+                // send the object definition data to the remote
+                // called from parent object example:
+                // connector.on('connected',()=>{
+                //     connector.sendObjectDataToRemote('ted',ted)
+                // })
+                let emitterDefinition = {
+                    emitterDefinition: true,
+                    emitterName: subscribeObject,
+                    asyncFunctions: [],
+                };
+                for (var prop in global[subscribeObject]) {
+                    if (global[subscribeObject].hasOwnProperty(prop) && !prop.startsWith('_')) {
+                        if (typeof global[subscribeObject][prop] === 'function' && global[subscribeObject][prop].constructor.name === 'AsyncFunction') {
+                            console.log(global[subscribeObject][prop].constructor.name)
+                            console.log('asyncFunction Prop:', prop)
+                            emitterDefinition.asyncFunctions.push(prop)
+                        }
+                    }
+                }
+                ws.send(JSON.stringify(emitterDefinition))
+
+
+
+// *****
             console.log('Bound Websocket ' + ws.id + ' to event ' + ws.subscribeEvents[i][subscribeObject] + ' in object:' + subscribeObject)
         } else {
             if (ws.subscribeEvents[i].function) {

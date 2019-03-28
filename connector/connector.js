@@ -2,7 +2,6 @@ const WebSocket = require('ws');
 
 const EventEmitter = require('events');
 const wscEmitter = new EventEmitter();
-
 //class MyEmitter extends EventEmitter {}
 module.exports = wscEmitter;
 var ws;
@@ -98,7 +97,7 @@ module.exports.sendObjectDefinitionDataToRemote = function (emitterName, emitter
     //     connector.sendObjectDataToRemote('ted',ted)
     // })
     let emitterDefinition = {
-        emitterDefinion: true,
+        emitterDefinition: true,
         emitterName: emitterName,
         asyncFunctions: [],
     };
