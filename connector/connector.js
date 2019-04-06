@@ -76,21 +76,9 @@ function heartbeat() {
 }
 
 module.exports.send = send()
-module.exports.remoteEmit = function (emitter, eventName, ...args) {
-    if (ws.readyState == 1) {
 
-        try {
-            ws.send(JSON.stringify({emitter: emitter, eventName: eventName, args: args}))
-        } catch (e) {
-            console.log('send failure:', e)
-        }
-    } else {
-        console.log('cant send socket closed', args)
-    }
-
-
-}
 module.exports.sendObjectDefinitionDataToRemote = function (emitterName, emitter) {
+   
     // send the object definition data to the remote
     // called from parent object example:
     // connector.on('connected',()=>{
@@ -127,13 +115,15 @@ function send(d) {
 
 
 }
+
+module.exports.remoteEmit = remoteEmit;
 function remoteEmit(emitter, eventName, ...args) {
     // sends the emitted event to the obj clone on the remote
     if (ws.readyState == 1) {
-        console.log(eventName)
+        //console.log(eventName)
         try {
-            ws.send(JSON.stringify({emitter: emitter, eventName: eventName, args: args}))
-            console.log('emitter',emitter,eventName,args)
+            ws.send(JSON.stringify({remoteEmit:true, emitter: emitter, eventName: eventName, args: args}))
+            //console.log('emitter',emitter,eventName,args)
         } catch (e) {
             console.log('send failure:', e)
         }

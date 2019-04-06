@@ -45,14 +45,14 @@ module.exports.startWebSocketServer = function (server) {
         ws.on('message', function incoming(message) {
             // console.log(message)
             try {
-                var data = JSON.parse(message)
+                var obj = JSON.parse(message)
             } catch (e) {
-                console.log('failed to parse websocket data:', e)
+                console.log('failed to parse websocket obj:', e)
             }
 
-            if (data.emitterDefinition) {
+            if (obj.emitterDefinition) {
 
-                createGlobalEmitterObject(data, ws)
+                createGlobalEmitterObject(obj, ws)
 
                 if (typeof ted == 'object') {
                     ted.asyncTest('call ted test function', 'val2', 3).then(function (s) {
@@ -65,22 +65,37 @@ module.exports.startWebSocketServer = function (server) {
 
 
             }
-            if (data.emitter) { // got message from reomte emitter
-                if (global[data.emitter] instanceof require("events").EventEmitter) {
+            if (obj.remoteEmit) { // got message from reomte emitter
+                if (global[obj.emitter] instanceof require("events").EventEmitter) {
                     // it's an emitter - emit the message
-                    global[data.emitter].emit(data.eventName, ...data.args)
+                    global[obj.emitter].emit(obj.eventName, ...obj.args)
                 } else {
-                    global[data.emitter] = new EventEmitter();
-                    console.log('New emiter created - should not happen now', data.emitter)
+                    global[obj.emitter] = new EventEmitter();
+                    console.log('New emiter created - should not happen now', obj.emitter)
                     // check to see if anyone subscribed before this existed
                     for (var each in webSocket) {
                         if (webSocket[each].subscribeEvents) {
                             subscribeEvents(webSocket[each])
                         }
                     }
-                    global[data.emitter].emit(data.eventName, ...data.args)
+                    global[obj.emitter].emit(obj.eventName, ...obj.args)
 
                 }
+            }
+            if (obj.remoteAsyncFunction){
+                // call to an Asyncfunction from the remote
+                // this would come in from a web browser
+
+                global[obj.emitterName][obj.functionName](...obj.args).then(function(...args){
+                   // here I got the data back
+
+                    console.log('--',obj,ws.id)
+                    // send the data back to me and fulfill the promise
+                    ws.send(JSON.stringify({remoteEmit:true, emitter: obj.emitterName, eventName: obj.returnEventName, args: args}))
+
+                    //remoteEmit(obj.emitterName,obj.returnEventName,...args)
+                })
+
             }
         });
         ws.on('pong', heartbeat);
@@ -157,7 +172,7 @@ function subscribeEvents(ws) {
 
                 if (this.ws.readyState == 1) {
                     try {
-                        this.ws.send(JSON.stringify({emitter: this.emitter, eventName: this.eventName, args: args}))
+                        this.ws.send(JSON.stringify({remoteEmit:true,emitter: this.emitter, eventName: this.eventName, args: args}))
 
                         //this.ws.send(JSON.stringify({[this.event]: evtData}))
                         // console.log('event:'+this.object)
@@ -254,6 +269,7 @@ function createGlobalEmitterObjectAsncyFunctions(d) {
         console.log('functionToCreate', functionToCreate, d.emitterName)
         // this is the return hook function
         global[d.emitterName][functionToCreate] = async function (...args) {
+             // create a random event to subscribe to - to await the return value
             var returnEventName = Math.random().toString();
             //send the command to the remote
             if (this.ws.readyState == 1) {
@@ -270,7 +286,7 @@ function createGlobalEmitterObjectAsncyFunctions(d) {
                 }
                 // return a promise to be fulfilled when we get the data back
                 return new Promise(function (resolve) {
-                    global['ted'].once(returnEventName, resolve)
+                    global[d.emitterName].once(returnEventName, resolve)
                 })
             }
 
