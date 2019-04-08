@@ -13,31 +13,34 @@ module.exports.startWebSocketServer = function (server) {
     wss.on('connection', function connection(ws, req) {
         const parameters = require('url').parse(req.url, true).query;
 
-        if (!parameters.mac && !parameters.browser) { //reject websocket wequests that are not from approved mac addresses
+        if (!parameters.id && !parameters.browser) { //reject websocket wequests that are not from approved mac addresses
             ws.close()
             return;
         }
 
-        ws.browser = parameters.browser
+        ws.browser = parameters.browser;
+        ws.systemType = parameters.systemType;
         ws.sid = parameters.sid;
         ws.mac = parameters.mac;
         ws.isAlive = true;
         ws.remoteAddress = ws._socket.remoteAddress;
-        ws.id = (ws.sid) ? ws.sid : ws.mac;
+        ws.id = (ws.sid) ? ws.sid : parameters.id
+        // in case of duplicate ids
         if (webSocket[ws.id]) {
             ws.id += Math.random().toString()
         }
         console.log('Connected Clients:' + wss.clients.size, ws.id)
+        console.log('New WebSocket Connection ID:'+ws.id+' systemType:'+ws.systemType+' Total Connections:'+wss.clients.size)
 
-        if (parameters.subscribeEvents) {
-            try {
-                ws.subscribeEvents = JSON.parse(parameters.subscribeEvents)
-                subscribeEvents(ws)
-
-            } catch (e) {
-                console.log('Failed to parse subscribed events', parameters.subscribeEvents)
-            }
-        }
+        // if (parameters.subscribeEvents) {
+        //     try {
+        //         ws.subscribeEvents = JSON.parse(parameters.subscribeEvents)
+        //         subscribeEvents(ws)
+        //
+        //     } catch (e) {
+        //         console.log('Failed to parse subscribed events', parameters.subscribeEvents)
+        //     }
+        // }
 
         webSocket[ws.id] = ws;
 
@@ -159,7 +162,7 @@ module.exports.startWebSocketServer = function (server) {
 
 function subscribeEvents(ws) {
     for (var i = 0; i < ws.subscribeEvents.length; ++i) {
-        let subscribeObject = Object.getOwnPropertyNames(ws.subscribeEvents[i])[0] // parse the property name
+        let subscribeObject = Object.getOwnPropertyNames(ws.subscribeEvents[i])[0] // parse the name of the event to subscribe to
         // check to see is the object we are tring to subscribe to is an eventEmitter
         if (global[subscribeObject] instanceof require("events").EventEmitter && typeof (ws.subscribeEvents[i].function) != 'function') {
             // wow this took forever to learn the syntax
@@ -177,7 +180,7 @@ function subscribeEvents(ws) {
                         //this.ws.send(JSON.stringify({[this.event]: evtData}))
                         // console.log('event:'+this.object)
                     } catch (e) {
-                        console.log('Failed to send websocket', webSocket[mac].readyState, mac, data)
+                        console.log('Failed to subscribe')
                     }
 
                 }
