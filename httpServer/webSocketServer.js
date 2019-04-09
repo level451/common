@@ -30,7 +30,7 @@ module.exports.startWebSocketServer = function (server) {
             ws.id += Math.random().toString()
         }
         console.log('Connected Clients:' + wss.clients.size, ws.id)
-        console.log('New WebSocket Connection ID:'+ws.id+' systemType:'+ws.systemType+' Total Connections:'+wss.clients.size)
+        console.log('New WebSocket Connection ID:' + ws.id + ' systemType:' + ws.systemType + ' Total Connections:' + wss.clients.size)
 
         // if (parameters.subscribeEvents) {
         //     try {
@@ -53,6 +53,11 @@ module.exports.startWebSocketServer = function (server) {
                 console.log('failed to parse websocket obj:', e)
             }
 
+            if (obj.subscribeToObjects) {
+                unsubscribeEvents(ws)
+                ws.subscribeEvents = obj.eventsToSubscribeTo
+                subscribeEvents(ws)
+            }
             if (obj.emitterDefinition) {
 
                 createGlobalEmitterObject(obj, ws)
@@ -85,16 +90,21 @@ module.exports.startWebSocketServer = function (server) {
 
                 }
             }
-            if (obj.remoteAsyncFunction){
+            if (obj.remoteAsyncFunction) {
                 // call to an Asyncfunction from the remote
                 // this would come in from a web browser
 
-                global[obj.emitterName][obj.functionName](...obj.args).then(function(...args){
-                   // here I got the data back
+                global[obj.emitterName][obj.functionName](...obj.args).then(function (...args) {
+                    // here I got the data back
 
-                    console.log('--',obj,ws.id)
+                    console.log('--', obj, ws.id)
                     // send the data back to me and fulfill the promise
-                    ws.send(JSON.stringify({remoteEmit:true, emitter: obj.emitterName, eventName: obj.returnEventName, args: args}))
+                    ws.send(JSON.stringify({
+                        remoteEmit: true,
+                        emitter: obj.emitterName,
+                        eventName: obj.returnEventName,
+                        args: args
+                    }))
 
                     //remoteEmit(obj.emitterName,obj.returnEventName,...args)
                 })
@@ -103,29 +113,18 @@ module.exports.startWebSocketServer = function (server) {
         });
         ws.on('pong', heartbeat);
         ws.on('close', function () {
-            // remove all eventlisteners we subscribed to
-            unsubscribeEvents(ws)
-            if (this.globalEmitterObjectName){
-                console.log ('Removing Global Emitter Object:',this.globalEmitterObjectName)
-                // deleting globalEmitterObject should remove all listeners,
-                // but the listener functions need to be deleted
-                for (var each in webSocket) {
-                    if (webSocket[each].subscribeEvents) {
-                        for (var i = 0; i < webSocket[each].subscribeEvents.length; ++i) {
-                            let subscribeObject = Object.getOwnPropertyNames(webSocket[each].subscribeEvents[i])[0] // parse the property name
-
-                            if (subscribeObject == this.globalEmitterObjectName){
-                              delete webSocket[each].subscribeEvents[i].function
-                                console.log('Deleting this subscription',subscribeObject,webSocket[each].id)
-                            }
-                        }
-                    }
-                }
-
-                delete global[this.globalEmitterObjectName]
+            // remove all eventlisteners we subscribed to for BROWSERS
+            // if this.subscribeEvents exists this websock is a browser this is subscribed to some remove emiter events
+            if (this.subscribeEvents) {
+                unsubscribeEvents(this)
             }
 
-            delete global[ws.globalEmitterObjectName]
+            // if this.globalEmitterObjectName exists this websock is the connection to a remote emitter
+            if (this.globalEmitterObjectName) {
+                deleteRemoteEmitter(this)
+            }
+
+
             if (ws.id && webSocket[ws.id]) {
                 delete webSocket[ws.id];
                 console.log('Removeing websocket from active object', ws.id)
@@ -159,11 +158,11 @@ module.exports.startWebSocketServer = function (server) {
 }
 
 
-
 function subscribeEvents(ws) {
+    let emitterDefinitionsSent = []
     for (var i = 0; i < ws.subscribeEvents.length; ++i) {
         let subscribeObject = Object.getOwnPropertyNames(ws.subscribeEvents[i])[0] // parse the name of the event to subscribe to
-        // check to see is the object we are tring to subscribe to is an eventEmitter
+        // check to see is the object we are tring to subscribe to is an eventEmitter && we are not already subscribed
         if (global[subscribeObject] instanceof require("events").EventEmitter && typeof (ws.subscribeEvents[i].function) != 'function') {
             // wow this took forever to learn the syntax
             // global[subscribeObject] is the eventemitter object we are subscribing to
@@ -175,7 +174,12 @@ function subscribeEvents(ws) {
 
                 if (this.ws.readyState == 1) {
                     try {
-                        this.ws.send(JSON.stringify({remoteEmit:true,emitter: this.emitter, eventName: this.eventName, args: args}))
+                        this.ws.send(JSON.stringify({
+                            remoteEmit: true,
+                            emitter: this.emitter,
+                            eventName: this.eventName,
+                            args: args
+                        }))
 
                         //this.ws.send(JSON.stringify({[this.event]: evtData}))
                         // console.log('event:'+this.object)
@@ -188,19 +192,24 @@ function subscribeEvents(ws) {
             }.bind({emitter: subscribeObject, eventName: ws.subscribeEvents[i][subscribeObject], ws: ws})
 
             // subscribe with the emietter.on to the saved function
+
             global[subscribeObject].on(ws.subscribeEvents[i][subscribeObject], ws.subscribeEvents[i].function)
 //*****
 
-                // send the object definition data to the remote
-                // called from parent object example:
-                // connector.on('connected',()=>{
-                //     connector.sendObjectDataToRemote('ted',ted)
-                // })
+            // send the object definition data to the remote
+            // called from parent object example:
+            // connector.on('connected',()=>{
+            //     connector.sendObjectDataToRemote('ted',ted)
+            // })
+            if (emitterDefinitionsSent.includes(subscribeObject) == 0) {
+                //havent sent an emitterDefinition for this object
+                emitterDefinitionsSent.push(subscribeObject)
                 let emitterDefinition = {
                     emitterDefinition: true,
                     emitterName: subscribeObject,
                     asyncFunctions: [],
                 };
+                // get the list of Asnc functions to send
                 for (var prop in global[subscribeObject]) {
                     if (global[subscribeObject].hasOwnProperty(prop) && !prop.startsWith('_')) {
                         if (typeof global[subscribeObject][prop] === 'function' && global[subscribeObject][prop].constructor.name === 'AsyncFunction') {
@@ -212,6 +221,7 @@ function subscribeEvents(ws) {
                 }
                 ws.send(JSON.stringify(emitterDefinition))
 
+            }
 
 
 // *****
@@ -234,18 +244,43 @@ function unsubscribeEvents(ws) {
             let subscribeObject = Object.getOwnPropertyNames(ws.subscribeEvents[i])[0] // parse the property name
             // unbind will fail is the object is not an emiter or the object was not bound
             if (global[subscribeObject] instanceof require("events").EventEmitter && typeof (ws.subscribeEvents[i].function) == 'function') {
-                console.log('UN-Bound Websocket ' + ws.id + ' to event ' + ws.subscribeEvents[i][subscribeObject] + ' in object:' + subscribeObject)
+                console.log('UN-Bound Websocket ' + ws.id + ' from ' + subscribeObject+' - '+ws.subscribeEvents[i][subscribeObject] )
 
                 global[subscribeObject].removeListener(ws.subscribeEvents[i][subscribeObject], ws.subscribeEvents[i].function)
 
 
-                console.log('UN-Bound fail - not an emiter Websocket ' + ws.id + ' to event ' + ws.subscribeEvents[i][subscribeObject] + ' in object:' + subscribeObject)
             } else {
+                console.log('UN-Bound fail - not an emiter Websocket ' + ws.id + ' to event ' + ws.subscribeEvents[i][subscribeObject] + ' in object:' + subscribeObject)
+
             }
 
         }
 
     }
+}
+
+function deleteRemoteEmitter(ws) {
+
+    if (ws.globalEmitterObjectName) {
+        // deleting globalEmitterObject should remove all listeners,
+        // but the listener functions need to be deleted
+        for (var each in webSocket) {
+            if (webSocket[each].subscribeEvents) {
+                for (var i = 0; i < webSocket[each].subscribeEvents.length; ++i) {
+                    let subscribeObject = Object.getOwnPropertyNames(webSocket[each].subscribeEvents[i])[0] // parse the property name
+
+                    if (subscribeObject == ws.globalEmitterObjectName) {
+                        delete webSocket[each].subscribeEvents[i].function
+                        console.log('Deleting subscription:' + subscribeObject + '.' + webSocket[each].subscribeEvents[i][subscribeObject] + ' from ' + webSocket[each].id)
+                    }
+                }
+            }
+        }
+        console.log('Removing Global Emitter Object:', ws.globalEmitterObjectName)
+        delete global[ws.globalEmitterObjectName]
+    }
+
+
 }
 
 function createGlobalEmitterObject(d, ws) {
@@ -272,7 +307,7 @@ function createGlobalEmitterObjectAsncyFunctions(d) {
         console.log('functionToCreate', functionToCreate, d.emitterName)
         // this is the return hook function
         global[d.emitterName][functionToCreate] = async function (...args) {
-             // create a random event to subscribe to - to await the return value
+            // create a random event to subscribe to - to await the return value
             var returnEventName = Math.random().toString();
             //send the command to the remote
             if (this.ws.readyState == 1) {
