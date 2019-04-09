@@ -1,19 +1,22 @@
 // options useHttps : false
 
 const webSocketServer = require('./webSocketServer')
-webSocketServer.on('test',function(x){console.log(x)})
+webSocketServer.on('test', function (x) {
+    console.log(x)
+})
 module.exports.webSocketServer = webSocketServer
-module.exports.start = function(options) {
+module.exports.start = function (options) {
 
-    if (!options){options = {}}
+    if (!options) {
+        options = {}
+    }
     if (!options.useHttps) options.useHttps = false;
 
     const express = require('express');
     const app = express();
-    if (options.useHttps){
+    if (options.useHttps) {
         var https = require('https');
-    } else
-    {
+    } else {
         var http = require('http');
     }
 
@@ -24,7 +27,6 @@ module.exports.start = function(options) {
     const authenticator = require('./Authenticator');
 
 
-
 // express knows to look for ejs becease the ejs package is installed
     app.use(cookieParser('this is my secret')) // need to store this out of github
 // BODY - PARSER FOR POSTS
@@ -33,6 +35,7 @@ module.exports.start = function(options) {
 //GET home route
     app.use(express.static('public')); // set up the public directory as web accessible
 
+    //this is how we make sure the user is logged in every page request
     app.use(verifyLogin);
 
 
@@ -67,7 +70,7 @@ module.exports.start = function(options) {
 
 
 // we will pass our 'app' to 'http' server
-    if (options.useHttps){
+    if (options.useHttps) {
         var server = https.createServer({
             key: fs.readFileSync('certs/privkey.pem'),
             cert: fs.readFileSync('certs/fullchain.pem'),
@@ -81,13 +84,13 @@ module.exports.start = function(options) {
 
         });
 
-    } else
-    {
-        var server = http.createServer(app).listen(((options.port) ? options.port : 2112),function(err){
-            if (err){
-                throw err
+    } else {
+        var server = http.createServer(app).listen(((options.port) ? options.port : 2112), function (err) {
+                if (err) {
+                    throw err
+                }
+                console.log('Http Server Listening on port:' + JSON.stringify(server.address()))
             }
-            console.log('Http Server Listening on port:'+JSON.stringify(server.address()))}
         );
     }
 
@@ -99,16 +102,27 @@ module.exports.start = function(options) {
 
             console.log('auth code:' + JSON.stringify(req.body))
             dbo.collection('Users').findOne({userName: req.body.userName}, function (err, rslt) {
-                console.log(rslt)
                 if (rslt != null && authenticator.authenticate(rslt.secretKey, req.body.authenticationCode)) {
-                    console.log('OPtions.usehttps',options.useHttps)
+                    console.log('OPtions.usehttps', options.useHttps)
                     res.cookie('Authorized', 'true', {
                         maxAge: 1000 * 60 * 60 * 24 * 30,
                         secure: options.useHttps,
                         signed: true
                     })
-                    res.cookie('uid', rslt._id, {maxAge: 1000 * 60 * 60 * 24 * 30, secure: options.useHttps, signed: true})
-                    res.redirect('/')
+                    res.cookie('uid', rslt._id, {
+                        maxAge: 1000 * 60 * 60 * 24 * 30,
+                        secure: options.useHttps,
+                        signed: true
+                    })
+                    // If have have a cookie indicating where they wanted to go after login
+                    // send them there
+                    if (req.signedCookies.pageAfterLogin) {
+                        res.clearCookie("pageAfterLogin");
+                        res.redirect(req.signedCookies.pageAfterLogin)
+                    } else {
+                        res.redirect('/')
+                    }
+
 
                 } else {
                     console.log('login failed')
@@ -125,8 +139,9 @@ module.exports.start = function(options) {
 
 
     }
+
     function verifyLogin(req, res, next) {
-        app.emit('test',req.url)
+        //app.emit('test',req.url)
 
         //console.log(req.connection.remoteAddress + ':' + req.url);
         //render local settings if it isnt there
@@ -149,7 +164,9 @@ module.exports.start = function(options) {
             }
 
         }
-        //grap the user info from the database
+        // If the user is signed in (has the signed cookie called Authorized
+        // or the use is going the the login page which is the only page you can get to if you are not logged in
+        // this will allow the login post to come through so you can actually login
         if (req.signedCookies.Authorized || (req.url == '/login')) {
 
 
@@ -157,6 +174,8 @@ module.exports.start = function(options) {
                 next();
                 return;
             }
+            //grap the user info from the database
+
             dbo.collection('Users').findOne({_id: database.ObjectID(req.signedCookies.uid)}, function (err, rslt) {
                 if (rslt == null) {
                     res.redirect('/login')
@@ -183,7 +202,7 @@ module.exports.start = function(options) {
                         if (rslt == null) {
                             console.log('Session Not found', rslt);
                         }
-                        if (rslt.killSession == true){
+                        if (rslt.killSession == true) {
                             res.redirect('/login')
                         }
                         req.sessionId = rslt._id
@@ -192,6 +211,10 @@ module.exports.start = function(options) {
                 }
             })
         } else { // no login cookie set
+            // so you were not going to the login page and aren't authorized (with the cookie)
+            // send you to the login page
+            // lets write a cookie to track where you wanted to go
+            res.cookie('pageAfterLogin', req.url, {secure: options.useHttps, signed: true});
             res.redirect('/login')
 
         }
