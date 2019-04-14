@@ -1,37 +1,29 @@
 const EventEmitter = require('events');
 const webSocketEmitter = new EventEmitter();
-
 //class MyEmitter extends EventEmitter {}
 module.exports = webSocketEmitter;
-
 var webSocket = {};
 const WebSock = require('ws');
-
 module.exports.startWebSocketServer = function (server) {
     const wss = new WebSock.Server({server});
-
     wss.on('connection', function connection(ws, req) {
         const parameters = require('url').parse(req.url, true).query;
-
         if (!parameters.id && !parameters.browser) { //reject websocket wequests that are not from approved mac addresses
-            ws.close()
+            ws.close();
             return;
         }
-
-        ws.browser = parameters.browser;
         ws.systemType = parameters.systemType;
-        ws.sid = parameters.sid;
         ws.mac = parameters.mac;
         ws.isAlive = true;
         ws.remoteAddress = ws._socket.remoteAddress;
-        ws.id = (ws.sid) ? ws.sid : parameters.id
+        ws.id = parameters.id;
+        ws.connectTime = new Date()
         // in case of duplicate ids
         if (webSocket[ws.id]) {
-            ws.id += Math.random().toString()
+            ws.id += Math.random().toString();
         }
-        console.log('Connected Clients:' + wss.clients.size, ws.id)
-        console.log('New WebSocket Connection ID:' + ws.id + ' systemType:' + ws.systemType + ' Total Connections:' + wss.clients.size)
-
+        console.log('Connected Clients:' + wss.clients.size, ws.id);
+        console.log('New WebSocket Connection ID:' + ws.id + ' systemType:' + ws.systemType + ' Total Connections:' + wss.clients.size);
         // if (parameters.subscribeEvents) {
         //     try {
         //         ws.subscribeEvents = JSON.parse(parameters.subscribeEvents)
@@ -41,74 +33,66 @@ module.exports.startWebSocketServer = function (server) {
         //         console.log('Failed to parse subscribed events', parameters.subscribeEvents)
         //     }
         // }
-
         webSocket[ws.id] = ws;
-
-
+        if (ws.systemType == 'browser') {
+            webSocketEmitter.emit('browserConnect', ws.id);
+        } else {
+            webSocketEmitter.emit('connect', ws.id);
+        }
         ws.on('message', function incoming(message) {
             // console.log(message)
             try {
-                var obj = JSON.parse(message)
+                var obj = JSON.parse(message);
             } catch (e) {
-                console.log('failed to parse websocket obj:', e)
+                console.log('failed to parse websocket obj:', e);
             }
-
             if (obj.subscribeToObjects) {
-                unsubscribeEvents(ws)
-                ws.subscribeEvents = obj.eventsToSubscribeTo
-                subscribeEvents(ws)
+                unsubscribeEvents(ws);
+                ws.subscribeEvents = obj.eventsToSubscribeTo;
+                subscribeEvents(ws);
             }
             if (obj.emitterDefinition) {
-
-                createGlobalEmitterObject(obj, ws)
-
+                createGlobalEmitterObject(obj, ws);
                 if (typeof ted == 'object') {
                     ted.asyncTest('call ted test function', 'val2', 3).then(function (s) {
-                        console.log('--------------', s)
-                    })
+                        console.log('--------------', s);
+                    });
                 }
                 // ted.asyncTest('call ted test function','val2',3).then(function (s) {
                 //     console.log('--------------',s)
                 // })
-
-
             }
             if (obj.remoteEmit) { // got message from reomte emitter
                 if (global[obj.emitter] instanceof require("events").EventEmitter) {
                     // it's an emitter - emit the message
-                    global[obj.emitter].emit(obj.eventName, ...obj.args)
+                    global[obj.emitter].emit(obj.eventName, ...obj.args);
                 } else {
                     global[obj.emitter] = new EventEmitter();
-                    console.log('New emiter created - should not happen now', obj.emitter)
+                    console.log('New emiter created - should not happen now', obj.emitter);
                     // check to see if anyone subscribed before this existed
                     for (var each in webSocket) {
                         if (webSocket[each].subscribeEvents) {
-                            subscribeEvents(webSocket[each])
+                            subscribeEvents(webSocket[each]);
                         }
                     }
-                    global[obj.emitter].emit(obj.eventName, ...obj.args)
-
+                    global[obj.emitter].emit(obj.eventName, ...obj.args);
                 }
             }
             if (obj.remoteAsyncFunction) {
                 // call to an Asyncfunction from the remote
                 // this would come in from a web browser
-
                 global[obj.emitterName][obj.functionName](...obj.args).then(function (...args) {
                     // here I got the data back
-
-                    console.log('--', obj, ws.id)
+                    console.log('Data returned from remote async function', obj, ws.id);
                     // send the data back to me and fulfill the promise
                     ws.send(JSON.stringify({
                         remoteEmit: true,
                         emitter: obj.emitterName,
                         eventName: obj.returnEventName,
                         args: args
-                    }))
-
+                    }));
                     //remoteEmit(obj.emitterName,obj.returnEventName,...args)
-                })
-
+                });
             }
         });
         ws.on('pong', heartbeat);
@@ -116,30 +100,30 @@ module.exports.startWebSocketServer = function (server) {
             // remove all eventlisteners we subscribed to for BROWSERS
             // if this.subscribeEvents exists this websock is a browser this is subscribed to some remove emiter events
             if (this.subscribeEvents) {
-                unsubscribeEvents(this)
+                unsubscribeEvents(this);
             }
-
             // if this.globalEmitterObjectName exists this websock is the connection to a remote emitter
             if (this.globalEmitterObjectName) {
-                deleteRemoteEmitter(this)
+                deleteRemoteEmitter(this);
             }
-
-
             if (ws.id && webSocket[ws.id]) {
                 delete webSocket[ws.id];
-                console.log('Removeing websocket from active object', ws.id)
+                console.log('Removeing websocket from active object', ws.id);
             } else {
-                console.log('WARNING: websocket closing and is not found as connected', ws.id)
+                console.log('WARNING: websocket closing and is not found as connected', ws.id);
+            }
+            if (ws.systemType == 'browser') {
+                webSocketEmitter.emit('browserClose', ws.id);
+            } else
+            {
+                webSocketEmitter.emit('close', ws.id);
             }
         });
-
-
     });
-
     const interval = setInterval(function ping() {
         wss.clients.forEach(function each(ws) {
             if (ws.isAlive === false) {
-                console.log('Socket killed with heartbeat:', ws.id)
+                console.log('Socket killed with heartbeat:', ws.id);
             }
             if (ws.isAlive === false) return ws.terminate();
             ws.isAlive = false;
@@ -147,31 +131,33 @@ module.exports.startWebSocketServer = function (server) {
         });
     }, 30000);
 
+
     function noop() {
 //hits here every ping-pong
     }
 
+
     function heartbeat() {
-        this.lastPing = new Date()
+        this.lastPing = new Date();
         this.isAlive = true;
     }
-}
+};
 
 
 function subscribeEvents(ws) {
-    let emitterDefinitionsSent = []
+    let emitterDefinitionsSent = [];
     for (var i = 0; i < ws.subscribeEvents.length; ++i) {
-        let subscribeObject = Object.getOwnPropertyNames(ws.subscribeEvents[i])[0] // parse the name of the event to subscribe to
+        let subscribeObject = Object.getOwnPropertyNames(ws.subscribeEvents[i])[0]; // parse the name of the event to subscribe to
         // check to see is the object we are tring to subscribe to is an eventEmitter && we are not already subscribed
-        if (global[subscribeObject] instanceof require("events").EventEmitter && typeof (ws.subscribeEvents[i].function) != 'function') {
+        console.log('type', subscribeObject, typeof global[subscribeObject]);
+        //global[subscribeObject] instanceof require("events").EventEmitter
+        if ((typeof global[subscribeObject] == 'object' || typeof global[subscribeObject] == 'function') && typeof (ws.subscribeEvents[i].function) != 'function') {
             // wow this took forever to learn the syntax
             // global[subscribeObject] is the eventemitter object we are subscribing to
             // after we subscribe we are using bind so the function has access to the
             // event the was subscribe to and the websocket to send it to
-
             // store the function name so we can unsuscribe later
             ws.subscribeEvents[i].function = function (...args) {
-
                 if (this.ws.readyState == 1) {
                     try {
                         this.ws.send(JSON.stringify({
@@ -179,23 +165,17 @@ function subscribeEvents(ws) {
                             emitter: this.emitter,
                             eventName: this.eventName,
                             args: args
-                        }))
-
+                        }));
                         //this.ws.send(JSON.stringify({[this.event]: evtData}))
                         // console.log('event:'+this.object)
                     } catch (e) {
-                        console.log('Failed to subscribe')
+                        console.log('Failed to subscribe');
                     }
-
                 }
-
-            }.bind({emitter: subscribeObject, eventName: ws.subscribeEvents[i][subscribeObject], ws: ws})
-
+            }.bind({emitter: subscribeObject, eventName: ws.subscribeEvents[i][subscribeObject], ws: ws});
             // subscribe with the emietter.on to the saved function
-
-            global[subscribeObject].on(ws.subscribeEvents[i][subscribeObject], ws.subscribeEvents[i].function)
+            global[subscribeObject].on(ws.subscribeEvents[i][subscribeObject], ws.subscribeEvents[i].function);
 //*****
-
             // send the object definition data to the remote
             // called from parent object example:
             // connector.on('connected',()=>{
@@ -203,7 +183,7 @@ function subscribeEvents(ws) {
             // })
             if (emitterDefinitionsSent.includes(subscribeObject) == 0) {
                 //havent sent an emitterDefinition for this object
-                emitterDefinitionsSent.push(subscribeObject)
+                emitterDefinitionsSent.push(subscribeObject);
                 let emitterDefinition = {
                     emitterDefinition: true,
                     emitterName: subscribeObject,
@@ -213,98 +193,84 @@ function subscribeEvents(ws) {
                 for (var prop in global[subscribeObject]) {
                     if (global[subscribeObject].hasOwnProperty(prop) && !prop.startsWith('_')) {
                         if (typeof global[subscribeObject][prop] === 'function' && global[subscribeObject][prop].constructor.name === 'AsyncFunction') {
-                            console.log(global[subscribeObject][prop].constructor.name)
-                            console.log('asyncFunction Prop:', prop)
-                            emitterDefinition.asyncFunctions.push(prop)
+                            //console.log(global[subscribeObject][prop].constructor.name)
+                            //console.log('asyncFunction Prop:', prop)
+                            emitterDefinition.asyncFunctions.push(prop);
                         }
                     }
                 }
-                ws.send(JSON.stringify(emitterDefinition))
-
+                ws.send(JSON.stringify(emitterDefinition));
             }
-
-
 // *****
-            console.log('Bound Websocket ' + ws.id + ' to event ' + ws.subscribeEvents[i][subscribeObject] + ' in object:' + subscribeObject)
+            console.log('Bound Websocket ' + ws.id + ' to event ' + ws.subscribeEvents[i][subscribeObject] + ' in object:' + subscribeObject);
         } else {
             if (ws.subscribeEvents[i].function) {
-                console.log('Already Bound Websocket ' + ws.id + ' to event ' + ws.subscribeEvents[i][subscribeObject] + ' in object:' + subscribeObject)
-
+                //       console.log('Already Bound Websocket ' + ws.id + ' to event ' + ws.subscribeEvents[i][subscribeObject] + ' in object:' + subscribeObject)
             } else {
-                console.log('FAILED to bind Bound Websocket ' + ws.id + ' to event ' + ws.subscribeEvents[i][subscribeObject] + ' in object:' + subscribeObject + ' NOT an Event Emitter')
+                console.log('FAILED to bind Bound Websocket ' + ws.id + ' to event ' + ws.subscribeEvents[i][subscribeObject] + ' in object:' + subscribeObject + ' NOT an Event Emitter');
+                console.log();
             }
         }
-
     }
 }
+
 
 function unsubscribeEvents(ws) {
     if (ws.subscribeEvents) {
         for (var i = 0; i < ws.subscribeEvents.length; ++i) {
-            let subscribeObject = Object.getOwnPropertyNames(ws.subscribeEvents[i])[0] // parse the property name
+            let subscribeObject = Object.getOwnPropertyNames(ws.subscribeEvents[i])[0]; // parse the property name
             // unbind will fail is the object is not an emiter or the object was not bound
-            if (global[subscribeObject] instanceof require("events").EventEmitter && typeof (ws.subscribeEvents[i].function) == 'function') {
-                console.log('UN-Bound Websocket ' + ws.id + ' from ' + subscribeObject+' - '+ws.subscribeEvents[i][subscribeObject] )
-
-                global[subscribeObject].removeListener(ws.subscribeEvents[i][subscribeObject], ws.subscribeEvents[i].function)
-
-
+            if ((typeof global[subscribeObject] == 'object' || typeof global[subscribeObject] == 'function') && typeof (ws.subscribeEvents[i].function) == 'function') {
+                console.log('UN-Bound Websocket ' + ws.id + ' from ' + subscribeObject + ' - ' + ws.subscribeEvents[i][subscribeObject]);
+                global[subscribeObject].removeListener(ws.subscribeEvents[i][subscribeObject], ws.subscribeEvents[i].function);
             } else {
-                console.log('UN-Bound fail - not an emiter Websocket ' + ws.id + ' to event ' + ws.subscribeEvents[i][subscribeObject] + ' in object:' + subscribeObject)
-
+                //   console.log('UN-Bound fail - not an emiter Websocket ' + ws.id + ' to event ' + ws.subscribeEvents[i][subscribeObject] + ' in object:' + subscribeObject)
             }
-
         }
-
     }
 }
 
-function deleteRemoteEmitter(ws) {
 
+function deleteRemoteEmitter(ws) {
     if (ws.globalEmitterObjectName) {
         // deleting globalEmitterObject should remove all listeners,
         // but the listener functions need to be deleted
         for (var each in webSocket) {
             if (webSocket[each].subscribeEvents) {
                 for (var i = 0; i < webSocket[each].subscribeEvents.length; ++i) {
-                    let subscribeObject = Object.getOwnPropertyNames(webSocket[each].subscribeEvents[i])[0] // parse the property name
-
+                    let subscribeObject = Object.getOwnPropertyNames(webSocket[each].subscribeEvents[i])[0]; // parse the property name
                     if (subscribeObject == ws.globalEmitterObjectName) {
-                        delete webSocket[each].subscribeEvents[i].function
-                        console.log('Deleting subscription:' + subscribeObject + '.' + webSocket[each].subscribeEvents[i][subscribeObject] + ' from ' + webSocket[each].id)
+                        delete webSocket[each].subscribeEvents[i].function;
+                        console.log('Deleting subscription:' + subscribeObject + '.' + webSocket[each].subscribeEvents[i][subscribeObject] + ' from ' + webSocket[each].id);
                     }
                 }
             }
         }
-        console.log('Removing Global Emitter Object:', ws.globalEmitterObjectName)
-        delete global[ws.globalEmitterObjectName]
+        console.log('Removing Global Emitter Object:', ws.globalEmitterObjectName);
+        delete global[ws.globalEmitterObjectName];
     }
-
-
 }
 
-function createGlobalEmitterObject(d, ws) {
-    console.log('Creating Global Emitter from remote object:' + d.emitterName)
-    global[d.emitterName] = new EventEmitter();
-    global[d.emitterName].ws = ws // attach the webSocket from the remote object to the new object
 
+function createGlobalEmitterObject(d, ws) {
+    console.log('Creating Global Emitter from remote object:' + d.emitterName);
+    global[d.emitterName] = new EventEmitter();
+    global[d.emitterName].ws = ws; // attach the webSocket from the remote object to the new object
     ws.globalEmitterObjectName = d.emitterName;
-    createGlobalEmitterObjectAsncyFunctions(d)
+    createGlobalEmitterObjectAsncyFunctions(d);
     // check if subscriptions are pending for this object from before it was here
     for (var each in webSocket) {
         if (webSocket[each].subscribeEvents) {
             // just try to resub everyone
-            subscribeEvents(webSocket[each])
+            subscribeEvents(webSocket[each]);
         }
     }
-
-
 }
+
 
 function createGlobalEmitterObjectAsncyFunctions(d) {
     for (functionToCreate of d.asyncFunctions) {
-
-        console.log('functionToCreate', functionToCreate, d.emitterName)
+        console.log('functionToCreate', functionToCreate, d.emitterName);
         // this is the return hook function
         global[d.emitterName][functionToCreate] = async function (...args) {
             // create a random event to subscribe to - to await the return value
@@ -318,20 +284,40 @@ function createGlobalEmitterObjectAsncyFunctions(d) {
                         functionName: functionToCreate,
                         returnEventName: returnEventName,
                         args: args
-                    }))
+                    }));
                 } catch (e) {
-                    console.log('Failed to send websocket', e, this.readyState, this.ws.id)
+                    console.log('Failed to send websocket', e, this.readyState, this.ws.id);
                 }
                 // return a promise to be fulfilled when we get the data back
                 return new Promise(function (resolve) {
-                    global[d.emitterName].once(returnEventName, resolve)
-                })
+                    global[d.emitterName].once(returnEventName, resolve);
+                });
             }
-
-        }
-
-
+        };
         //***************
     }
-
 }
+
+
+webSocketEmitter.on('browserConnect', (id) => {
+    id = id.split('.'); // id[0] is sessionId & id[1] is requestId
+    console.log('emit connect', id);
+    dbo.collection('requestLog').updateOne({_id: database.ObjectID(id[1])},
+        {
+            $set: {
+                websocketOpenTime: new Date(),
+                activeWebSocket:true
+            }
+        });
+});
+webSocketEmitter.on('browserClose', (id) => {
+    id = id.split('.'); // id[0] is sessionId & id[1] is requestId
+    console.log('-----------------------++++++++++++++++++++++emit disconnect', id);
+    dbo.collection('requestLog').updateOne({_id: database.ObjectID(id[1])},
+        {
+            $set: {
+                websockeCloseTime: new Date(),
+                activeWebSocket:false
+            }
+        });
+});
