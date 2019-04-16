@@ -1,6 +1,9 @@
 const EventEmitter = require('events');
 const webSocketEmitter = new EventEmitter();
+const database = require('./database')
+
 //class MyEmitter extends EventEmitter {}
+
 module.exports = webSocketEmitter;
 var webSocket = {};
 const WebSock = require('ws');
@@ -20,7 +23,7 @@ module.exports.startWebSocketServer = function (server) {
         ws.connectTime = new Date()
         // in case of duplicate ids
         if (webSocket[ws.id]) {
-            ws.id += Math.random().toString();
+                ws.id += '.'+Math.random().toString();
         }
         console.log('Connected Clients:' + wss.clients.size, ws.id);
         console.log('New WebSocket Connection ID:' + ws.id + ' systemType:' + ws.systemType + ' Total Connections:' + wss.clients.size);
@@ -94,6 +97,25 @@ module.exports.startWebSocketServer = function (server) {
                     //remoteEmit(obj.emitterName,obj.returnEventName,...args)
                 });
             }
+            if (obj.killSession){
+                console.log('kill Session',obj.requestLogId)
+                for (var id in webSocket){
+
+                    if (webSocket[id].systemType == 'browser' && id.split('.')[1] == obj.requestLogId){
+                        console.log('found',id)
+                        if (webSocket[id].readyState == 1) {
+                            try {
+                                webSocket[id].send(JSON.stringify({
+                                    logOut: true
+                                }));
+                            } catch (e) {
+                                console.log('Failed to logout');
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
         });
         ws.on('pong', heartbeat);
         ws.on('close', function () {
@@ -113,7 +135,7 @@ module.exports.startWebSocketServer = function (server) {
                 console.log('WARNING: websocket closing and is not found as connected', ws.id);
             }
             if (ws.systemType == 'browser') {
-                webSocketEmitter.emit('browserClose', ws.id);
+                webSocketEmitter.emit('browserClose', ws.id,ws.connectTime);
             } else
             {
                 webSocketEmitter.emit('close', ws.id);
@@ -300,24 +322,42 @@ function createGlobalEmitterObjectAsncyFunctions(d) {
 
 
 webSocketEmitter.on('browserConnect', (id) => {
-    id = id.split('.'); // id[0] is sessionId & id[1] is requestId
     console.log('emit connect', id);
-    dbo.collection('requestLog').updateOne({_id: database.ObjectID(id[1])},
+
+    id = id.split('.'); // id[0] is sessionId & id[1] is requestId
+
+    console.log('emit connect', id[1]);
+    dbo.collection('requestLog').findOneAndUpdate({_id: database.ObjectID(id[1])},
         {
             $set: {
                 websocketOpenTime: new Date(),
                 activeWebSocket:true
             }
-        });
+        },{returnOriginal:false}).then((rslt) => {
+            database.emit('requestLog',rslt.value)
+
+        }).catch(
+     (e) => {
+        console.log('Error updating session', e);
+
+    });
 });
-webSocketEmitter.on('browserClose', (id) => {
+webSocketEmitter.on('browserClose', (id,connectTime) => {
     id = id.split('.'); // id[0] is sessionId & id[1] is requestId
     console.log('-----------------------++++++++++++++++++++++emit disconnect', id);
-    dbo.collection('requestLog').updateOne({_id: database.ObjectID(id[1])},
+    dbo.collection('requestLog').findOneAndUpdate({_id: database.ObjectID(id[1])},
         {
             $set: {
                 websockeCloseTime: new Date(),
-                activeWebSocket:false
+                activeWebSocket:false,
+                connectedTimeMinutes: (new Date()-connectTime)/60000
             }
+        },{returnOriginal:false}).then((rslt) => {
+        database.emit('requestLog',rslt.value)
+
+    }).catch(
+        (e) => {
+            console.log('Error updating session', e);
+
         });
 });

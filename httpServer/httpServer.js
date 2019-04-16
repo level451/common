@@ -1,9 +1,9 @@
 // options useHttps : false
 const webSocketServer = require('./webSocketServer');
+const database = require('./database');
 webSocketServer.on('test', function (x) {
     console.log(x);
 });
-
 module.exports = function (options) {
     if (!options) {
         options = {};
@@ -139,7 +139,6 @@ module.exports = function (options) {
         // any vars in there will be available to the webpage
         // if you include varsToJavascript.ejs
         res.locals.javascript = {};
-        console.log(req.url);
         // this is called for every request
         // except for the login get and post, and access to public
         // If the user is signed in (has the signed cookie called Authorized
@@ -163,7 +162,7 @@ module.exports = function (options) {
 
 
     function sessionLogger(req, res, next) {
-        console.log('sessoonLogger', req.url);
+             res.set('Cache-Control','no-store')
         //grab the user info from the database
         dbo.collection('Users').findOne({_id: database.ObjectID(req.signedCookies.uid)}, function (err, rslt) {
             if (rslt == null) {
@@ -178,80 +177,74 @@ module.exports = function (options) {
             res.locals.javascript.userDocument = rslt;
             // the session cookie expires every time you close the browser
             //
-        });
-        dbo.collection('requestLog').insertOne({
-            req: req.url,
-            remoteAddress: req.connection.remoteAddress,
-            userAgent: req.headers["user-agent"]
-        }).then((o) => {
-            let requestId = o.ops[0]._id;
-            res.locals.javascript.requestId = requestId;
-            if (!req.signedCookies.sid) {
-                // if there is no session cookie
-                dbo.collection('Session').insertOne(
-                    {
-                        userName: res.locals.javascript.userDocument.userName,
-                        userId: res.locals.javascript.userDocument._id,
-                        sessionCreated: new Date(),
-                        sessionLastAccessed: new Date(),
-                        killSession: false,
-                        urlHistory: [{
-                            reqDate: new Date(), page: req.url, requestId: requestId
-                        }]
-                    }
-                    , function (err, resp) {
-                        console.log('Session Created:', resp.ops[0]);
-                        req.sessionId = resp.ops[0]._id.toString();
-                        res.cookie('sid', resp.ops[0]._id, {secure: options.useHttps, signed: true});
-                        res.locals.javascript.sessionDocument = resp.ops[0];
-                        next();
-                    });
-            } else {
-                req.sessionId = req.signedCookies.sid;
-                dbo.collection('Session').findOneAndUpdate({_id: database.ObjectID(req.signedCookies.sid)},
-                    {
-                        $push: {
-                            urlHistory: {
-                                $each: [{
-                                    reqDate: new Date(),
-                                    page: req.url,
-                                    requestId: requestId
-                                }],
-                                $position: 0
-                            }
+            dbo.collection('requestLog').insertOne({
+                userName: res.locals.javascript.userDocument.userName,
+                req: req.url,
+                remoteAddress: req.connection.remoteAddress,
+                userAgent: req.headers["user-agent"]
+            }).then((o) => {
+                let requestId = o.ops[0]._id;
+                res.locals.javascript.requestId = requestId;
+                if (!req.signedCookies.sid) {
+                    // if there is no session cookie
+                    dbo.collection('Session').insertOne(
+                        {
+                            userName: res.locals.javascript.userDocument.userName,
+                            userId: res.locals.javascript.userDocument._id,
+                            sessionCreated: new Date(),
+                            sessionLastAccessed: new Date(),
+                            killSession: false,
+                            urlHistory: [{
+                                reqDate: new Date(), page: req.url, requestId: requestId
+                            }]
                         }
-                        ,
-                        $set: {
-                            sessionLastAccessed: new Date()
-                        }
-                    }).then((rslt) => {
-                        // if kill session is set force a logout
-                        if (rslt.lastErrorObject.n == 0 || rslt.killSession == true
-                        ) {
-                            res.redirect('/login');
-                        } else {
-                            res.locals.javascript.sessionDocument = rslt.value;
+                        , function (err, resp) {
+                            console.log('Session Created:', resp.ops[0]);
+                            req.sessionId = resp.ops[0]._id.toString();
+                            res.cookie('sid', resp.ops[0]._id, {secure: options.useHttps, signed: true});
+                            res.locals.javascript.sessionDocument = resp.ops[0];
                             next();
+                        });
+                } else {
+                    req.sessionId = req.signedCookies.sid;
+                    console.log(req.sessionId);
+                    dbo.collection('Session').findOneAndUpdate({_id: database.ObjectID(req.sessionId)},
+                        {
+                            $push: {
+                                urlHistory: {
+                                    $each: [{
+                                        reqDate: new Date(),
+                                        page: req.url,
+                                        requestId: requestId
+                                    }],
+                                    $position: 0
+                                }
+                            }
+                            ,
+                            $set: {
+                                sessionLastAccessed: new Date()
+                            }
+                        },{returnOriginal:false}).then((rslt) => {
+                            // if kill session is set force a logout
+                            if (rslt.lastErrorObject.n == 0 || rslt.killSession == true
+                            ) {
+                                res.redirect('/login');
+                            } else {
+                                res.locals.javascript.sessionDocument = rslt.value;
+                                next();
+                            }
+                        }, (e) => {
+                            console.log('Error updating session', e);
+                            res.redirect('/login');
                         }
-                    }, (e) => {
-                        console.log('Error updating session', e);
-                        res.redirect('/login');
-                    }
-                );
-            }
-            console.log('-----------------------------', o.ops[0]._id);
+                    );
+                }
+            });
         });
     }
 
 
-    app.getSessionLog = async function (limit) {
-        try {
-            let rslt = await dbo.collection('Session').find({}).project({userId: 0}).sort({sessionLastAccessed: -1}).toArray();
-            return rslt;
-        } catch (e) {
-            console.log(e);
-        }
-    };
+
     app.test = async function (...args) {
         console.log(args);
         await new Promise(resolve => setTimeout(resolve, 0));
@@ -261,3 +254,5 @@ module.exports = function (options) {
     return app;
 };
 module.exports.webSocketServer = webSocketServer;
+module.exports.database = database;
+
