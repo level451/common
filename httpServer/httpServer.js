@@ -31,8 +31,21 @@ module.exports = function (options) {
     app.get('/login', function (req, res) {
         console.log('at login');
         res.clearCookie("Authorized");
-        res.clearCookie("uid");
-        res.clearCookie("sid");
+        //   res.clearCookie("uid");
+        //    res.clearCookie("sid");
+        dbo.collection('Users').findOne({_id: database.ObjectID(req.signedCookies.uid)}).then((o) => {
+            console.log('------------', o);
+            dbo.collection('requestLog').insertOne({
+                userName: ((o && o.userName) ? o.userName : 'Unknown'),
+                notAuthorized:true,
+                req: req.url,
+                remoteAddress: req.connection.remoteAddress,
+                userAgent: req.headers["user-agent"],
+                timeStamp: new Date()
+            }).then((o) => {
+                database.emit('requestLog', o.ops[0]);
+            });
+        });
         res.render('login.ejs', {pageName: 'Login', noMenu: true});
     });
     app.post('/login', urlencodedParser, function (req, res) {
@@ -95,6 +108,8 @@ module.exports = function (options) {
 
     function processLogin(req, res) {
 // from the /login POST
+        dbo.collection('Users').findOne({_id: database.ObjectID(req.signedCookies.uid)}).then((o) => {
+        });
         if ('authenticationCode' in req.body) {
             console.log('auth code:' + JSON.stringify(req.body));
             dbo.collection('Users').findOne({userName: req.body.userName}, function (err, rslt) {
@@ -110,12 +125,31 @@ module.exports = function (options) {
                     });
                     // also set the userid cookie
                     res.cookie('uid', rslt._id, {
-                        maxAge: 1000 * 60 * 60 * 24 * 30,
+                        maxAge: 1000 * 60 * 60 * 24 * 365,
                         secure: options.useHttps,
                         signed: true
                     });
+                    if (req.signedCookies.sid) {
+                        // there is an existing sid - lets mark it closed and clear the cookie
+                        dbo.collection('Session').updateOne({_id: database.ObjectID(req.signedCookies.sid)},
+                            {
+                                $set: {
+                                    closed: true
+                                }
+                            });
+                        res.clearCookie('sid');
+                    }
                     // If have have a cookie indicating where they wanted to go after login
                     // send them there
+                    dbo.collection('requestLog').insertOne({
+                        userName: rslt.userName,
+                        req: '/login (Success)',
+                        remoteAddress: req.connection.remoteAddress,
+                        userAgent: req.headers["user-agent"],
+                        timeStamp: new Date()
+                    }).then((o) => {
+                        database.emit('requestLog', o.ops[0]);
+                    });
                     if (req.signedCookies.pageAfterLogin) {
                         res.clearCookie("pageAfterLogin");
                         res.redirect(req.signedCookies.pageAfterLogin);
@@ -123,11 +157,31 @@ module.exports = function (options) {
                         res.redirect('/');
                     }
                 } else {
+                    dbo.collection('requestLog').insertOne({
+                        userName: req.body.userName + '(' + req.body.authenticationCode + ')',
+                        req: '/login (Failed)',
+                        notAuthorized:true,
+                        remoteAddress: req.connection.remoteAddress,
+                        userAgent: req.headers["user-agent"],
+                        timeStamp: new Date()
+                    }).then((o) => {
+                        database.emit('requestLog', o.ops[0]);
+                    });
                     console.log('login failed');
                     res.status(401).send('You are not authorized :(');
                 }
             });
         } else {
+            dbo.collection('requestLog').insertOne({
+                userName: req.body.userName,
+                req: '/login (Failed No Pass)',
+                notAuthorized:true,
+                remoteAddress: req.connection.remoteAddress,
+                userAgent: req.headers["user-agent"],
+                timeStamp: new Date()
+            }).then((o) => {
+                database.emit('requestLog', o.ops[0]);
+            });
             console.log('login failed - no formdata');
             res.send(401, 'You are not authorized');
         }
@@ -135,6 +189,7 @@ module.exports = function (options) {
 
 
     function verifyLogin(req, res, next) {
+        res.set('Cache-Control', 'no-store');
         // set up the javascript obect
         // any vars in there will be available to the webpage
         // if you include varsToJavascript.ejs
@@ -152,17 +207,33 @@ module.exports = function (options) {
                 res.redirect('/localSettings');
             }
         } else { // no login cookie set
+            //NOT AUTHORIZED AT THIS POINT
+            dbo.collection('Users').findOne({_id: database.ObjectID(req.signedCookies.uid)}).then((o) => {
+                console.log('------------', o);
+                dbo.collection('requestLog').insertOne({
+                    userName: ((o && o.userName) ? o.userName : 'Unknown'),
+                    notAuthorized:true,
+                    req: req.url,
+                    remoteAddress: req.connection.remoteAddress,
+                    userAgent: req.headers["user-agent"],
+                    timeStamp: new Date()
+                }).then((o) => {
+                    database.emit('requestLog', o.ops[0]);
+                });
+            });
             // so you were not going to the login page and aren't authorized (with the cookie)
             // send you to the login page
             // lets write a cookie to track where you wanted to go
-            res.cookie('pageAfterLogin', req.url, {secure: options.useHttps, signed: true});
+            res.cookie('pageAfterLogin', req.url, {
+                secure: options.useHttps,
+                signed: true
+            });
             res.redirect('/login');
         }
     };
 
 
     function sessionLogger(req, res, next) {
-             res.set('Cache-Control','no-store')
         //grab the user info from the database
         dbo.collection('Users').findOne({_id: database.ObjectID(req.signedCookies.uid)}, function (err, rslt) {
             if (rslt == null) {
@@ -181,12 +252,15 @@ module.exports = function (options) {
                 userName: res.locals.javascript.userDocument.userName,
                 req: req.url,
                 remoteAddress: req.connection.remoteAddress,
-                userAgent: req.headers["user-agent"]
+                userAgent: req.headers["user-agent"],
+                timeStamp: new Date()
             }).then((o) => {
+                database.emit('requestLog', o.ops[0]);
                 let requestId = o.ops[0]._id;
                 res.locals.javascript.requestId = requestId;
                 if (!req.signedCookies.sid) {
                     // if there is no session cookie
+                    console.log('NO SESSION COOKIE');
                     dbo.collection('Session').insertOne(
                         {
                             userName: res.locals.javascript.userDocument.userName,
@@ -201,7 +275,11 @@ module.exports = function (options) {
                         , function (err, resp) {
                             console.log('Session Created:', resp.ops[0]);
                             req.sessionId = resp.ops[0]._id.toString();
-                            res.cookie('sid', resp.ops[0]._id, {secure: options.useHttps, signed: true});
+                            res.cookie('sid', resp.ops[0]._id, {
+                                maxAge: 1000 * 60 * 60 * 24 * 365,
+                                secure: options.useHttps,
+                                signed: true
+                            });
                             res.locals.javascript.sessionDocument = resp.ops[0];
                             next();
                         });
@@ -224,7 +302,7 @@ module.exports = function (options) {
                             $set: {
                                 sessionLastAccessed: new Date()
                             }
-                        },{returnOriginal:false}).then((rslt) => {
+                        }, {returnOriginal: false}).then((rslt) => {
                             // if kill session is set force a logout
                             if (rslt.lastErrorObject.n == 0 || rslt.killSession == true
                             ) {
@@ -244,7 +322,6 @@ module.exports = function (options) {
     }
 
 
-
     app.test = async function (...args) {
         console.log(args);
         await new Promise(resolve => setTimeout(resolve, 0));
@@ -255,4 +332,19 @@ module.exports = function (options) {
 };
 module.exports.webSocketServer = webSocketServer;
 module.exports.database = database;
+module.exports.pageNotFound = function (req, res, next) {
+    dbo.collection('requestLog').findOneAndUpdate({_id: res.locals.javascript.requestId},
+        {
+            $set: {
+                pageNotFound: true
+            }
+        }, {returnOriginal: false}).then((rslt) => {
+        database.emit('requestLog', rslt.value);
+    }).catch(
+        (e) => {
+            console.log('Error updating session', e);
+        });
+    // add custom page not found here
+    next();
+};
 
