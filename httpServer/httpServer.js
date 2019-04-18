@@ -23,6 +23,11 @@ module.exports = function (options) {
     const authenticator = require('./Authenticator');
 // express knows to look for ejs becease the ejs package is installed
     app.use(cookieParser('this is my secret')); // need to store this out of github
+//force all urls to lower case for reporting and matching ease
+    app.use(function(req,res,next){
+        req.url = req.url.toLowerCase();
+        next()
+    })
 // BODY - PARSER FOR POSTS
     // allow to loggin in to access the public folder
     // no ejs as javascript in there
