@@ -98,7 +98,7 @@ function heartbeat() {
     }, 30000 + 1000);
 }
 
-module.exports.send = send()
+module.exports.send = send
 
 module.exports.sendObjectDefinitionDataToRemote = function (emitterName, emitter) {
 
@@ -133,7 +133,7 @@ function send(d) {
 
         }
     } else {
-        console.log('cant send socket closed', d)
+        console.trace('cant send socket closed', d)
     }
 
 

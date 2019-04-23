@@ -24,10 +24,10 @@ module.exports = function (options) {
 // express knows to look for ejs becease the ejs package is installed
     app.use(cookieParser('this is my secret')); // need to store this out of github
 //force all urls to lower case for reporting and matching ease
-    app.use(function(req,res,next){
+    app.use(function (req, res, next) {
         req.url = req.url.toLowerCase();
-        next()
-    })
+        next();
+    });
 // BODY - PARSER FOR POSTS
     // allow to loggin in to access the public folder
     // no ejs as javascript in there
@@ -42,7 +42,7 @@ module.exports = function (options) {
             console.log('------------', o);
             dbo.collection('requestLog').insertOne({
                 userName: ((o && o.userName) ? o.userName : 'Unknown'),
-                notAuthorized:true,
+                notAuthorized: true,
                 req: req.url,
                 remoteAddress: req.connection.remoteAddress,
                 userAgent: req.headers["user-agent"],
@@ -115,6 +115,7 @@ module.exports = function (options) {
 // from the /login POST
         dbo.collection('Users').findOne({_id: database.ObjectID(req.signedCookies.uid)}).then((o) => {
         });
+        req.localIp = req.body.localIp;
         if ('authenticationCode' in req.body) {
             console.log('auth code:' + JSON.stringify(req.body));
             dbo.collection('Users').findOne({userName: req.body.userName}, function (err, rslt) {
@@ -134,6 +135,12 @@ module.exports = function (options) {
                         secure: options.useHttps,
                         signed: true
                     });
+                    if (req.body.localIp) {
+                        res.cookie('localIp', req.body.localIp, {
+                            secure: options.useHttps,
+                            signed: true
+                        });
+                    }
                     if (req.signedCookies.sid) {
                         // there is an existing sid - lets mark it closed and clear the cookie
                         dbo.collection('Session').updateOne({_id: database.ObjectID(req.signedCookies.sid)},
@@ -151,7 +158,8 @@ module.exports = function (options) {
                         req: '/login (Success)',
                         remoteAddress: req.connection.remoteAddress,
                         userAgent: req.headers["user-agent"],
-                        timeStamp: new Date()
+                        timeStamp: new Date(),
+                        localIp: req.localIp
                     }).then((o) => {
                         database.emit('requestLog', o.ops[0]);
                     });
@@ -165,10 +173,11 @@ module.exports = function (options) {
                     dbo.collection('requestLog').insertOne({
                         userName: req.body.userName + '(' + req.body.authenticationCode + ')',
                         req: '/login (Failed)',
-                        notAuthorized:true,
+                        notAuthorized: true,
                         remoteAddress: req.connection.remoteAddress,
                         userAgent: req.headers["user-agent"],
-                        timeStamp: new Date()
+                        timeStamp: new Date(),
+                        localIp: req.localIp
                     }).then((o) => {
                         database.emit('requestLog', o.ops[0]);
                     });
@@ -180,10 +189,11 @@ module.exports = function (options) {
             dbo.collection('requestLog').insertOne({
                 userName: req.body.userName,
                 req: '/login (Failed No Pass)',
-                notAuthorized:true,
+                notAuthorized: true,
                 remoteAddress: req.connection.remoteAddress,
                 userAgent: req.headers["user-agent"],
-                timeStamp: new Date()
+                timeStamp: new Date(),
+                localIp: req.localIp
             }).then((o) => {
                 database.emit('requestLog', o.ops[0]);
             });
@@ -217,7 +227,7 @@ module.exports = function (options) {
                 console.log('------------', o);
                 dbo.collection('requestLog').insertOne({
                     userName: ((o && o.userName) ? o.userName : 'Unknown'),
-                    notAuthorized:true,
+                    notAuthorized: true,
                     req: req.url,
                     remoteAddress: req.connection.remoteAddress,
                     userAgent: req.headers["user-agent"],
@@ -258,36 +268,64 @@ module.exports = function (options) {
                 req: req.url,
                 remoteAddress: req.connection.remoteAddress,
                 userAgent: req.headers["user-agent"],
-                timeStamp: new Date()
+                timeStamp: new Date(),
+                localIp: req.signedCookies.localIp,
             }).then((o) => {
                 database.emit('requestLog', o.ops[0]);
                 let requestId = o.ops[0]._id;
                 res.locals.javascript.requestId = requestId;
                 if (!req.signedCookies.sid) {
-                    // if there is no session cookie
                     console.log('NO SESSION COOKIE');
-                    dbo.collection('Session').insertOne(
-                        {
-                            userName: res.locals.javascript.userDocument.userName,
-                            userId: res.locals.javascript.userDocument._id,
-                            sessionCreated: new Date(),
-                            sessionLastAccessed: new Date(),
-                            killSession: false,
-                            urlHistory: [{
-                                reqDate: new Date(), page: req.url, requestId: requestId
-                            }]
+                    // if there is no session cookie
+                    let requestAddress =     req.connection.remoteAddress.substring(req.connection.remoteAddress.lastIndexOf(':')+1)+'/'
+                    if (requestAddress.indexOf('10.') == 0 || requestAddress.indexOf('10.') == 0){
+                        requestAddress = ''
+                    }
+                    require('request')({
+                        method: 'GET',
+                        url: 'https://api.ipdata.co/'+
+                        requestAddress+
+                            '?api-key=6b218a526b9987af57f23ca28429787a179aa2aa2eb4ed0f8f7524a1',
+                        headers: {
+                            'Accept': 'application/json'
+                        }}, function (error, response, body) {
+                        if (response.statusCode == '200'){
+                            try {
+                                req.ipInfo = JSON.parse(body)
+                            } catch (e) {
+                            }
                         }
-                        , function (err, resp) {
-                            console.log('Session Created:', resp.ops[0]);
-                            req.sessionId = resp.ops[0]._id.toString();
-                            res.cookie('sid', resp.ops[0]._id, {
-                                maxAge: 1000 * 60 * 60 * 24 * 365,
-                                secure: options.useHttps,
-                                signed: true
+                        /*******
+*/
+
+                        dbo.collection('Session').insertOne(
+                            {
+                                userName: res.locals.javascript.userDocument.userName,
+                                userId: res.locals.javascript.userDocument._id,
+                                sessionCreated: new Date(),
+                                sessionLastAccessed: new Date(),
+                                localIp: req.signedCookies.localIp,
+                                ipInfo: req.ipInfo,
+                                killSession: false,
+                                urlHistory: [{
+                                    reqDate: new Date(), page: req.url, requestId: requestId
+                                }]
+                            }
+                            , function (err, resp) {
+                                console.log('Session Created:', resp.ops[0]);
+                                req.sessionId = resp.ops[0]._id.toString();
+                                res.cookie('sid', resp.ops[0]._id, {
+                                    maxAge: 1000 * 60 * 60 * 24 * 365,
+                                    secure: options.useHttps,
+                                    signed: true
+                                });
+                                res.locals.javascript.sessionDocument = resp.ops[0];
+                                // this is set from the login page
+                                next();
                             });
-                            res.locals.javascript.sessionDocument = resp.ops[0];
-                            next();
-                        });
+                    });
+
+
                 } else {
                     req.sessionId = req.signedCookies.sid;
                     console.log(req.sessionId);
