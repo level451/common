@@ -71,7 +71,7 @@ module.exports.startWebSocketServer = function (server) {
                     global[obj.emitter].emit(obj.eventName, ...obj.args);
                 } else {
                     global[obj.emitter] = new EventEmitter();
-                    console.log('New emiter created - should not happen now', obj.emitter);
+                    console.trace('New emiter created - should not happen now', obj.emitter);
                     // check to see if anyone subscribed before this existed
                     for (var each in webSocket) {
                         if (webSocket[each].subscribeEvents) {
@@ -269,7 +269,8 @@ function deleteRemoteEmitter(ws) {
             }
         }
         console.log('Removing Global Emitter Object:', ws.globalEmitterObjectName);
-        delete global[ws.globalEmitterObjectName];
+        delete global[ws.globalEmitterObjectName]; // proxy
+
     }
 }
 
@@ -280,6 +281,7 @@ function createGlobalEmitterObject(d, ws) {
     global[d.emitterName].ws = ws; // attach the webSocket from the remote object to the new object
     ws.globalEmitterObjectName = d.emitterName;
     createGlobalEmitterObjectAsncyFunctions(d);
+
     // check if subscriptions are pending for this object from before it was here
     for (var each in webSocket) {
         if (webSocket[each].subscribeEvents) {

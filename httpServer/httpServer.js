@@ -21,7 +21,11 @@ module.exports = function (options) {
     const bodyParser = require('body-parser');
     const urlencodedParser = bodyParser.urlencoded({extended: false});
     const authenticator = require('./Authenticator');
-// express knows to look for ejs becease the ejs package is installed
+    console.log(app.get('views'),process.cwd(),__dirname)
+    // set the views directory to include project views && build ins
+    app.set('views',[process.cwd()+'/views',__dirname+'/views'])
+
+    // express knows to look for ejs becease the ejs package is installed
     app.use(cookieParser('this is my secret')); // need to store this out of github
 //force all urls to lower case for reporting and matching ease
     app.use(function (req, res, next) {
@@ -60,6 +64,8 @@ module.exports = function (options) {
     app.use(verifyLogin);
     // dont need to log access to this folder
     app.use(express.static('securePublic')); // set up the public directory as web accessible
+    app.use(express.static(__dirname+'/securePublic')); // set up the public directory as web accessible
+
     //log the request
     app.use(sessionLogger);
     /*

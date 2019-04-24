@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>CS6 Login</title>    <title>MC CS6 View</title>
+    <link rel="icon" href="images/favicon.png" type="image/png" sizes="16x16">
+    <meta name="viewport" content="width=device-width, initial-scale=1" >
+    <link rel="stylesheet" href="./stylesheets/main.css">
+    <link rel="stylesheet" href="./stylesheets/login.css">
+</head>
+<body>
+<%- include("theme/Default/header")%>
+
+<div class="form">
+    <form method="POST" action="/login">
+
+        <h2 class="heading"><%=pageName%></h2>
+        <br>
+
+        <input type="text" id="name" name="userName" placeholder="User name..">
+
+
+        <input type="text" id="code" name="authenticationCode" placeholder="Access code..">
+
+
+
+        <input type="submit" value="Submit">
+    </form>
+</div>
+</body>
+
+</html>
