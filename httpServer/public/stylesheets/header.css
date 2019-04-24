@@ -1,0 +1,127 @@
+/* this line puts top div at top of page*/
+
+
+/* this is for small screens */
+@media screen and (max-width:750px)  {
+    #hamburger{
+        float:left;
+        width:35px;
+
+        margin-right: 20px;
+        margin-left: 20px;
+        margin-top: 3.5vw;
+
+    }
+    #hamburger:hover{
+        cursor: pointer;
+        border: solid #717171 2px;
+        margin-right: 18px;
+        margin-left: 18px;
+    }
+
+
+    #logo{
+        float:left;
+        height:72px;
+        margin-right: 20px;
+        display:inline-block;
+        margin-top: 2px;
+        margin-bottom: 2px;
+    }
+
+    #title {
+        font-size:  5vw;
+        color: #6a6c6e;
+        padding-top:calc(1.1vw + 10px);
+        margin:0;
+    }
+    #pagename{
+        display:inline;
+        font-size:15px;
+        color: #717171;
+        margin-top: 0;
+        padding-right : 0;
+        font-weight: bold;
+    }
+
+}
+/* this is for normal screens */
+@media screen and (min-width:751px) {
+    #hamburger {
+        float: left;
+        width: 35px;
+
+        margin-right: 30px;
+        margin-left: 20px;
+        margin-top: 28px;
+
+    }
+    #hamburger:hover{
+        cursor: pointer;
+        border: solid #717171 2px;
+        margin-right: 28px;
+        margin-left: 18px;
+    }
+
+
+    #logo {
+        float: left;
+        height: 85px;
+        margin-right: 30px;
+        display: inline-block;
+        margin-top: 3px;
+        margin-bottom: 2px;
+    }
+
+    #title {
+        font-weight: bold;
+        font-size: 45px;
+        color: #717171;
+        margin-top: 18px;
+        display:inline-block;
+        margin-bottom:0;
+    }
+
+    #pagename{
+        display:inline;
+        float:right;
+        font-size:30px;
+        color: #717171;
+        margin-top: 30px;
+        padding-right : 30px;
+        margin-bottom:0;
+        font-weight: bold;
+    }
+}
+
+.top{
+    background-color: whitesmoke;
+    font-family: Helvetica, Arial,sans-serif;
+    width: 100%;
+}
+
+
+#bottomLine1{
+    height: 2px;
+    width:100%;
+    background-color: #717171;
+    margin:0;
+}
+#bottomLine{
+    background: linear-gradient(whitesmoke, #c6c6c6c4);
+    width: 100%;
+    height: 15px;
+    border:none;
+    margin:0;
+}
+#topLine{
+    background: linear-gradient(  #c6c6c6c4,whitesmoke);
+    width: 100%;
+    height: 15px;
+    border:none;
+    margin:0;
+}
+
+
+/*need to change the padding on the container body*/
+body{margin:0}

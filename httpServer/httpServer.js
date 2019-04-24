@@ -35,7 +35,7 @@ module.exports = function (options) {
 // BODY - PARSER FOR POSTS
     // allow to loggin in to access the public folder
     // no ejs as javascript in there
-    app.use(express.static('public')); // set up the public directory as web accessible
+    app.use(express.static(__dirname+'/public')); // set up the public directory as web accessible
     // also allow login if not logged in of course
     app.get('/login', function (req, res) {
         console.log('at login');
@@ -73,7 +73,9 @@ module.exports = function (options) {
 
      */
     app.get('/localSettings', function (req, res) {
-        res.render('localSettings.ejs', {localSettings: localSettings, pageName: 'Local Maching Settings'});
+
+
+        res.render('localSettings.ejs', {localSettings: (localSettings || localSettingsDescription), pageName: 'Local Maching Settings'});
     });
     app.post('/localSettings', bodyParser.urlencoded({extended: true}), function (req, res) {
         if (req.body) {
@@ -221,12 +223,12 @@ module.exports = function (options) {
         if (req.signedCookies.Authorized) {
             //render local settings if it doesnt exist
             // this only should happed on intital setup
-            if (localSettings) {
-                next();
-            } else {
-                //
-                res.redirect('/localSettings');
-            }
+            // if (localSettings) {
+                 next();
+            // } else {
+            //     res.render('localSettings.ejs', {localSettings: localSettingsDescription, pageName: 'Local Machine Settings'});
+            //     //                res.redirect('/localSettings');
+            // }
         } else { // no login cookie set
             //NOT AUTHORIZED AT THIS POINT
             dbo.collection('Users').findOne({_id: database.ObjectID(req.signedCookies.uid)}).then((o) => {
