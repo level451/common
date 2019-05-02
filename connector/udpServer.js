@@ -70,4 +70,8 @@ udpSocket.bindHome = async function (id, home) {
 udpSocket.unbindHome = async function (id) {
     udpSocket.sendObject({messageType: 'unbindHome', id: id});
 };
+udpSocket.test = async function (...id) {
+    return [...id]
+};
+
 module.exports = udpSocket;

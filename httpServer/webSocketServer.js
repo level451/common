@@ -57,13 +57,12 @@ module.exports.startWebSocketServer = function (server) {
                 createGlobalEmitterObject(obj, ws);
                 //test lines below
                 if (typeof ted == 'object') {
-                    ted.asyncTest('ted1','call ted test (parm0)', 'parm1', 2).then(function (s) {
+                    ted.asyncTest('ted1', 'call ted test (parm0)', 'parm1', 2).then(function (s) {
                         console.log('--------------', s);
                     });
                     ted.getMembers().then(function (s) {
                         console.log('get members', s);
                     });
-
                 }
                 // ted.asyncTest('call ted test function','val2',3).then(function (s) {
                 //     console.log('--------------',s)
@@ -72,9 +71,7 @@ module.exports.startWebSocketServer = function (server) {
             if (obj.remoteEmit) { // got message from remote emitter
                 if (global[obj.emitter] instanceof require("events").EventEmitter) {
                     // it's an emitter - emit the message
-                    console.log('remote emit',this.globalEmitterObjectId)
                     global[obj.emitter].emit(obj.eventName, ...obj.args);
-
                 } else {
                     global[obj.emitter] = new EventEmitter();
                     console.trace('New emiter created - should not happen now', obj.emitter);
@@ -90,18 +87,29 @@ module.exports.startWebSocketServer = function (server) {
             if (obj.remoteAsyncFunction) {
                 // call to an Asyncfunction from the remote
                 // this would come in from a web browser
-                global[obj.emitterName][obj.functionName](...obj.args).then(function (...args) {
-                    // here I got the data back
-                    console.log('Data returned from remote async function', obj, ws.id);
-                    // send the data back to me and fulfill the promise
-                    ws.send(JSON.stringify({
-                        remoteEmit: true,
-                        emitter: obj.emitterName,
-                        eventName: obj.returnEventName,
-                        args: args
-                    }));
-                    //remoteEmit(obj.emitterName,obj.returnEventName,...args)
-                });
+                if (global[obj.emitterName]) {
+                    global[obj.emitterName][obj.functionName](...obj.args).then(function (...args) {
+                        // here I got the data back
+                        console.log('Data returned from remote async function', obj, ws.id);
+                        // send the data back to me and fulfill the promise
+                        ws.send(JSON.stringify({
+                            remoteEmit: true,
+                            emitter: obj.emitterName,
+                            eventName: obj.returnEventName,
+                            args: args
+                        }));
+                        //remoteEmit(obj.emitterName,obj.returnEventName,...args)
+                    });
+                } else {
+                    console.log(obj.args);
+                    this.send(JSON.stringify({
+                            remoteEmit: true,
+                            emitter: obj.emitterName,
+                            eventName: obj.returnEventName,
+                            args: ['error', ...obj.args]
+                        })
+                    );
+                }
             }
             if (obj.killSession) {
                 console.log('kill Session', obj.requestLogId);
@@ -338,10 +346,10 @@ function createGlobalEmitterObjectAsncyFunctions(d) {
         };
         //***************
     }
-    global[d.emitterName].getMembers = async function (...args) { return this.members}
-
-
-    }
+    global[d.emitterName].getMembers = async function (...args) {
+        return this.members;
+    };
+}
 
 
 webSocketEmitter.on('browserConnect', (id) => {

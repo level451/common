@@ -15,7 +15,7 @@ if (location.protocol === 'https:') {
 
 
 function on(...args) {
-  console.log('here')
+  //console.log('here')
   //  wss.on(...args);
 }
 
@@ -31,7 +31,6 @@ wss.onmessage = function (evt) {
         let obj = JSON.parse(evt.data);
         if (obj.remoteEmit) {
             window[obj.emitter].emit(obj.eventName, ...obj.args);
-            //         console.log(obj.eventName)
         } else if (obj.emitterDefinition) {
             // this is an emitter Definition - the basic remote object
             // we are going to create the hooks to the remote function
