@@ -267,30 +267,46 @@ function unsubscribeEvents(ws) {
 
 function deleteRemoteEmitter(ws) {
     if (ws.globalEmitterObjectName) {
-        // deleting globalEmitterObject should remove all listeners,
-        // but the listener functions need to be deleted
-        for (var each in webSocket) {
-            if (webSocket[each].subscribeEvents) {
-                for (var i = 0; i < webSocket[each].subscribeEvents.length; ++i) {
-                    let subscribeObject = Object.getOwnPropertyNames(webSocket[each].subscribeEvents[i])[0]; // parse the property name
-                    if (subscribeObject == ws.globalEmitterObjectName) {
-                        delete webSocket[each].subscribeEvents[i].function;
-                        console.log('Deleting subscription:' + subscribeObject + '.' + webSocket[each].subscribeEvents[i][subscribeObject] + ' from ' + webSocket[each].id);
-                    }
-                }
-            }
-        }
-        console.log('Removing Global Emitter Object:', ws.globalEmitterObjectName);
-        delete global[ws.globalEmitterObjectName]; // proxy
+        // check if this is the last of the members
+        if (global[ws.globalEmitterObjectName].members.length == 1){
+             // deleting globalEmitterObject should remove all listeners,
+             // but the listener functions need to be deleted
+             for (var each in webSocket) {
+                 if (webSocket[each].subscribeEvents) {
+                     for (var i = 0; i < webSocket[each].subscribeEvents.length; ++i) {
+                         let subscribeObject = Object.getOwnPropertyNames(webSocket[each].subscribeEvents[i])[0]; // parse the property name
+                         if (subscribeObject == ws.globalEmitterObjectName) {
+                             delete webSocket[each].subscribeEvents[i].function;
+                             console.log('Deleting subscription:' + subscribeObject + '.' + webSocket[each].subscribeEvents[i][subscribeObject] + ' from ' + webSocket[each].id);
+                         }
+                     }
+                 }
+             }
+            console.log(`Removing ${ws.globalEmitterObjectId} from Global Emitter Object ${ws.globalEmitterObjectName}`);
+            console.log('Destroying Global Emitter Object:', ws.globalEmitterObjectName);
+             delete global[ws.globalEmitterObjectName];
+
+         } else
+         {
+             console.log(`Removing ${ws.globalEmitterObjectId} from Global Emitter Object ${ws.globalEmitterObjectName}`);
+
+             // more members remain only delete this member
+             delete global[ws.globalEmitterObjectName].ws[ws.globalEmitterObjectId]
+             let index = global[ws.globalEmitterObjectName].members.indexOf(ws.globalEmitterObjectId)
+             if (index > -1) {
+                 global[ws.globalEmitterObjectName].members.splice(index, 1);
+             }
+         }
     }
 }
 
 
 function createGlobalEmitterObject(d, ws) {
-    console.log('Creating Global Emitter from remote object:' + d.emitterName);
     ws.globalEmitterObjectName = d.emitterName;
     ws.globalEmitterObjectId = d.emitterId;
     if (!global[d.emitterName]) {
+        console.log(`Creating Global Emitter ${d.emitterName} Id:${d.emitterId}`);
+
         global[d.emitterName] = new EventEmitter();
         global[d.emitterName].members = [d.emitterId];
         global[d.emitterName].ws = {};
@@ -304,6 +320,8 @@ function createGlobalEmitterObject(d, ws) {
             }
         }
     } else {
+        console.log(`Adding Emitter ${d.emitterId} to Global emitter ${d.emitterName}`);
+
         // if not a new emiter - add this on to the members
         global[d.emitterName].members.push(d.emitterId);
         global[d.emitterName].ws[d.emitterId] = ws; // attach the webSocket from the remote object to the object
@@ -371,7 +389,7 @@ webSocketEmitter.on('browserConnect', (id) => {
 });
 webSocketEmitter.on('browserClose', (id, connectTime) => {
     id = id.split('.'); // id[0] is sessionId & id[1] is requestId
-    console.log('-----------------------++++++++++++++++++++++emit disconnect', id);
+    //console.log('-----------------------++++++++++++++++++++++emit disconnect', id);
     dbo.collection('requestLog').findOneAndUpdate({_id: database.ObjectID(id[1])},
         {
             $set: {
