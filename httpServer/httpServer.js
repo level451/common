@@ -4,27 +4,22 @@ const database = require('./database');
 webSocketServer.on('test', function (x) {
     console.log(x);
 });
-module.exports = function (options) {
-    if (!options) {
-        options = {};
-    }
+var options;
+const express = require('express');
+const app = express();
+const fs = require('fs');
+
+module.exports = function (startOptions = {}) {
+    options = startOptions;
     if (!options.useHttps) options.useHttps = false;
-    const express = require('express');
-    const app = express();
-    if (options.useHttps) {
-        var https = require('https');
-    } else {
-        var http = require('http');
-    }
-    const fs = require('fs');
+
     const cookieParser = require('cookie-parser');
     const bodyParser = require('body-parser');
     const urlencodedParser = bodyParser.urlencoded({extended: false});
     const authenticator = require('./Authenticator');
-    console.log(app.get('views'),process.cwd(),__dirname)
+    console.log(app.get('views'), process.cwd(), __dirname);
     // set the views directory to include project views && build ins
-    app.set('views',[process.cwd()+'/views',__dirname+'/views'])
-
+    app.set('views', [process.cwd() + '/views', __dirname + '/views']);
     // express knows to look for ejs becease the ejs package is installed
     app.use(cookieParser('this is my secret')); // need to store this out of github
 //force all urls to lower case for reporting and matching ease
@@ -35,7 +30,7 @@ module.exports = function (options) {
 // BODY - PARSER FOR POSTS
     // allow to loggin in to access the public folder
     // no ejs as javascript in there
-    app.use(express.static(__dirname+'/public')); // set up the public directory as web accessible
+    app.use(express.static(__dirname + '/public')); // set up the public directory as web accessible
     // also allow login if not logged in of course
     app.get('/login', function (req, res) {
         console.log('at login');
@@ -43,7 +38,6 @@ module.exports = function (options) {
         //   res.clearCookie("uid");
         //    res.clearCookie("sid");
         dbo.collection('Users').findOne({_id: database.ObjectID(req.signedCookies.uid)}).then((o) => {
-            console.log('------------', o);
             dbo.collection('requestLog').insertOne({
                 userName: ((o && o.userName) ? o.userName : 'Unknown'),
                 notAuthorized: true,
@@ -55,7 +49,7 @@ module.exports = function (options) {
                 database.emit('requestLog', o.ops[0]);
             });
         });
-        res.render('login.ejs', {pageName: 'Login', noMenu: true});
+        res.render('login.ejs', {pageName: 'Login', noMenu: true, theme: localSettings.Theme.theme});
     });
     app.post('/login', urlencodedParser, function (req, res) {
         processLogin(req, res);
@@ -63,9 +57,9 @@ module.exports = function (options) {
     //this is how we make sure the user is logged in every page request
     app.use(verifyLogin);
     // dont need to log access to this folder
+    app.use(express.static('public')); // set up the public directory as web accessible
     app.use(express.static('securePublic')); // set up the public directory as web accessible
-    app.use(express.static(__dirname+'/securePublic')); // set up the public directory as web accessible
-
+    app.use(express.static(__dirname + '/securePublic')); // set up the public directory as web accessible
     //log the request
     app.use(sessionLogger);
     /*
@@ -73,9 +67,10 @@ module.exports = function (options) {
 
      */
     app.get('/localSettings', function (req, res) {
-
-
-        res.render('localSettings.ejs', {localSettings: (localSettings || localSettingsDescription), pageName: 'Local Maching Settings'});
+        res.render('localSettings.ejs', {
+            localSettings: (localSettings || localSettingsDescription),
+            pageName: 'Local Maching Settings'
+        });
     });
     app.post('/localSettings', bodyParser.urlencoded({extended: true}), function (req, res) {
         if (req.body) {
@@ -96,27 +91,6 @@ module.exports = function (options) {
         });
     });
 // we will pass our 'app' to 'http' server
-    if (options.useHttps) {
-        var server = https.createServer({
-            key: fs.readFileSync('certs/privkey.pem'),
-            cert: fs.readFileSync('certs/fullchain.pem'),
-            ca: fs.readFileSync('certs/chain.pem')
-        }, app).listen(((options.port) ? options.port : 2112), function (err) {
-            if (err) {
-                throw err;
-            }
-            console.log('Https Server Listening on port:' + JSON.stringify(server.address()));
-        });
-    } else {
-        var server = http.createServer(app).listen(((options.port) ? options.port : 2112), function (err) {
-                if (err) {
-                    throw err;
-                }
-                console.log('Http Server Listening on port:' + JSON.stringify(server.address()));
-            }
-        );
-    }
-    webSocketServer.startWebSocketServer(server);
 
 
     function processLogin(req, res) {
@@ -217,6 +191,7 @@ module.exports = function (options) {
         // any vars in there will be available to the webpage
         // if you include varsToJavascript.ejs
         res.locals.javascript = {};
+        res.locals.javascript.localSettings = global.localSettings
         // this is called for every request
         // except for the login get and post, and access to public
         // If the user is signed in (has the signed cookie called Authorized
@@ -224,7 +199,7 @@ module.exports = function (options) {
             //render local settings if it doesnt exist
             // this only should happed on intital setup
             // if (localSettings) {
-                 next();
+            next();
             // } else {
             //     res.render('localSettings.ejs', {localSettings: localSettingsDescription, pageName: 'Local Machine Settings'});
             //     //                res.redirect('/localSettings');
@@ -285,26 +260,30 @@ module.exports = function (options) {
                 if (!req.signedCookies.sid) {
                     console.log('NO SESSION COOKIE');
                     // if there is no session cookie
-                    let requestAddress =     req.connection.remoteAddress.substring(req.connection.remoteAddress.lastIndexOf(':')+1)+'/'
-                    if (requestAddress.indexOf('10.') == 0 || requestAddress.indexOf('10.') == 0){
-                        requestAddress = ''
+                    let requestAddress = req.connection.remoteAddress.substring(req.connection.remoteAddress.lastIndexOf(':') + 1) + '/';
+                    if (requestAddress.indexOf('10.') == 0 || requestAddress.indexOf('192.') == 0 || requestAddress.indexOf('1/') == 0) {
+                        requestAddress = '';
                     }
                     require('request')({
                         method: 'GET',
-                        url: 'https://api.ipdata.co/'+
-                        requestAddress+
+                        url: 'https://api.ipdata.co/' +
+                            requestAddress +
                             '?api-key=6b218a526b9987af57f23ca28429787a179aa2aa2eb4ed0f8f7524a1',
                         headers: {
                             'Accept': 'application/json'
-                        }}, function (error, response, body) {
-                        if (response.statusCode == '200'){
+                        }
+                    }, function (error, response, body) {
+                        if (response.statusCode == '200') {
                             try {
-                                req.ipInfo = JSON.parse(body)
+                                req.ipInfo = JSON.parse(body);
                             } catch (e) {
+                                console.log(e);
                             }
+                        } else {
+                            console.log(response.statusCode, body, requestAddress);
                         }
                         /*******
-*/
+                         */
 
                         dbo.collection('Session').insertOne(
                             {
@@ -320,7 +299,7 @@ module.exports = function (options) {
                                 }]
                             }
                             , function (err, resp) {
-                                console.log('Session Created:', resp.ops[0]);
+                                console.log('Session Created for user:', resp.ops[0].userName);
                                 req.sessionId = resp.ops[0]._id.toString();
                                 res.cookie('sid', resp.ops[0]._id, {
                                     maxAge: 1000 * 60 * 60 * 24 * 365,
@@ -332,8 +311,6 @@ module.exports = function (options) {
                                 next();
                             });
                     });
-
-
                 } else {
                     req.sessionId = req.signedCookies.sid;
                     console.log(req.sessionId);
@@ -398,4 +375,33 @@ module.exports.pageNotFound = function (req, res, next) {
     // add custom page not found here
     next();
 };
+module.exports.listenHttp = function (){
+    console.log('Called listed')
+    if (options.useHttps) {
+        var https = require('https');
+    } else {
+        var http = require('http');
+    }
+    if (options.useHttps) {
+        var server = https.createServer({
+            key: fs.readFileSync('certs/privkey.pem'),
+            cert: fs.readFileSync('certs/fullchain.pem'),
+            ca: fs.readFileSync('certs/chain.pem')
+        }, app).listen(((options.port) ? options.port : 2112), function (err) {
+            if (err) {
+                throw err;
+            }
+            console.log('Https Server Listening on port:' + JSON.stringify(server.address()));
+        });
+    } else {
+        var server = http.createServer(app).listen(((options.port) ? options.port : 2112), function (err) {
+                if (err) {
+                    throw err;
+                }
+                console.log('Http Server Listening on port:' + JSON.stringify(server.address()));
+            }
+        );
+    }
+    webSocketServer.startWebSocketServer(server);
 
+};

@@ -11,17 +11,19 @@ if (location.protocol === 'https:') {
     //+ '&subscribeEvents=' + JSON.stringify(subscribeEvents))
     console.log('Using Standard Websocket');
 }
-eventify(wss);
+//eventify(wss);
 
 
 function on(...args) {
-    wss.on(...args);
+  console.log('here')
+  //  wss.on(...args);
 }
 
 
 wss.onopen = function () {
-    this.emit('open', '---------------');
+//    this.emit('open', '---------------');
     console.log('websocket open');
+
 };
 wss.onmessage = function (evt) {
     try {
@@ -41,11 +43,11 @@ wss.onmessage = function (evt) {
             window.location.href='/login'
         }
         else {
-            this.emit('message', obj);
+          //  this.emit('message', obj);
             console.log('??', obj);
         }
     } catch (e) {
-        this.emit('message', evt.data);
+        //this.emit('message', evt.data);
     }
     // wsEmitter.emit(Object.keys(d)[0],d[Object.keys(d)[0]])
     //  console.log(evt.data)
@@ -55,7 +57,7 @@ wss.onerror = function (err) {
     wss.close();
 };
 wss.onclose = function () {
-    this.emit('close', '');
+  //  this.emit('close', '');
     console.log('websocket close reconecting websocket');
     location.reload()
 };

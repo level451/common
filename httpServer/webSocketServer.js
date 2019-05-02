@@ -1,9 +1,7 @@
 const EventEmitter = require('events');
 const webSocketEmitter = new EventEmitter();
-const database = require('./database')
-
+const database = require('./database');
 //class MyEmitter extends EventEmitter {}
-
 module.exports = webSocketEmitter;
 var webSocket = {};
 const WebSock = require('ws');
@@ -20,10 +18,10 @@ module.exports.startWebSocketServer = function (server) {
         ws.isAlive = true;
         ws.remoteAddress = ws._socket.remoteAddress;
         ws.id = parameters.id;
-        ws.connectTime = new Date()
+        ws.connectTime = new Date();
         // in case of duplicate ids
         if (webSocket[ws.id]) {
-                ws.id += '.'+Math.random().toString();
+            ws.id += '.' + Math.random().toString();
         }
         console.log('Connected Clients:' + wss.clients.size, ws.id);
         console.log('New WebSocket Connection ID:' + ws.id + ' systemType:' + ws.systemType + ' Total Connections:' + wss.clients.size);
@@ -41,6 +39,7 @@ module.exports.startWebSocketServer = function (server) {
             webSocketEmitter.emit('browserConnect', ws.id);
         } else {
             webSocketEmitter.emit('connect', ws.id);
+            console.log('systemType', ws.systemType);
         }
         ws.on('message', function incoming(message) {
             // console.log(message)
@@ -56,19 +55,26 @@ module.exports.startWebSocketServer = function (server) {
             }
             if (obj.emitterDefinition) {
                 createGlobalEmitterObject(obj, ws);
+                //test lines below
                 if (typeof ted == 'object') {
-                    ted.asyncTest('call ted test function', 'val2', 3).then(function (s) {
+                    ted.asyncTest('ted1','call ted test (parm0)', 'parm1', 2).then(function (s) {
                         console.log('--------------', s);
                     });
+                    ted.getMembers().then(function (s) {
+                        console.log('get members', s);
+                    });
+
                 }
                 // ted.asyncTest('call ted test function','val2',3).then(function (s) {
                 //     console.log('--------------',s)
                 // })
             }
-            if (obj.remoteEmit) { // got message from reomte emitter
+            if (obj.remoteEmit) { // got message from remote emitter
                 if (global[obj.emitter] instanceof require("events").EventEmitter) {
                     // it's an emitter - emit the message
+                    console.log('remote emit',this.globalEmitterObjectId)
                     global[obj.emitter].emit(obj.eventName, ...obj.args);
+
                 } else {
                     global[obj.emitter] = new EventEmitter();
                     console.trace('New emiter created - should not happen now', obj.emitter);
@@ -97,12 +103,11 @@ module.exports.startWebSocketServer = function (server) {
                     //remoteEmit(obj.emitterName,obj.returnEventName,...args)
                 });
             }
-            if (obj.killSession){
-                console.log('kill Session',obj.requestLogId)
-                for (var id in webSocket){
-
-                    if (webSocket[id].systemType == 'browser' && id.split('.')[1] == obj.requestLogId){
-                        console.log('found',id)
+            if (obj.killSession) {
+                console.log('kill Session', obj.requestLogId);
+                for (var id in webSocket) {
+                    if (webSocket[id].systemType == 'browser' && id.split('.')[1] == obj.requestLogId) {
+                        console.log('found', id);
                         if (webSocket[id].readyState == 1) {
                             try {
                                 webSocket[id].send(JSON.stringify({
@@ -135,9 +140,8 @@ module.exports.startWebSocketServer = function (server) {
                 console.log('WARNING: websocket closing and is not found as connected', ws.id);
             }
             if (ws.systemType == 'browser') {
-                webSocketEmitter.emit('browserClose', ws.id,ws.connectTime);
-            } else
-            {
+                webSocketEmitter.emit('browserClose', ws.id, ws.connectTime);
+            } else {
                 webSocketEmitter.emit('close', ws.id);
             }
         });
@@ -270,24 +274,31 @@ function deleteRemoteEmitter(ws) {
         }
         console.log('Removing Global Emitter Object:', ws.globalEmitterObjectName);
         delete global[ws.globalEmitterObjectName]; // proxy
-
     }
 }
 
 
 function createGlobalEmitterObject(d, ws) {
     console.log('Creating Global Emitter from remote object:' + d.emitterName);
-    global[d.emitterName] = new EventEmitter();
-    global[d.emitterName].ws = ws; // attach the webSocket from the remote object to the new object
     ws.globalEmitterObjectName = d.emitterName;
-    createGlobalEmitterObjectAsncyFunctions(d);
-
-    // check if subscriptions are pending for this object from before it was here
-    for (var each in webSocket) {
-        if (webSocket[each].subscribeEvents) {
-            // just try to resub everyone
-            subscribeEvents(webSocket[each]);
+    ws.globalEmitterObjectId = d.emitterId;
+    if (!global[d.emitterName]) {
+        global[d.emitterName] = new EventEmitter();
+        global[d.emitterName].members = [d.emitterId];
+        global[d.emitterName].ws = {};
+        global[d.emitterName].ws[d.emitterId] = ws; // attach the webSocket from the remote object to the new object
+        createGlobalEmitterObjectAsncyFunctions(d);
+        // check if subscriptions are pending for this object from before it was here
+        for (var each in webSocket) {
+            if (webSocket[each].subscribeEvents) {
+                // just try to resub everyone
+                subscribeEvents(webSocket[each]);
+            }
         }
+    } else {
+        // if not a new emiter - add this on to the members
+        global[d.emitterName].members.push(d.emitterId);
+        global[d.emitterName].ws[d.emitterId] = ws; // attach the webSocket from the remote object to the object
     }
 }
 
@@ -298,11 +309,18 @@ function createGlobalEmitterObjectAsncyFunctions(d) {
         // this is the return hook function
         global[d.emitterName][functionToCreate] = async function (...args) {
             // create a random event to subscribe to - to await the return value
+            let member = null;
+            if (this.members.includes(args[0])) {
+                member = args[0];
+                args.shift();
+            } else {
+                member = this.members[0];
+            }
             var returnEventName = Math.random().toString();
             //send the command to the remote
-            if (this.ws.readyState == 1) {
+            if (this.ws[member].readyState == 1) {
                 try {
-                    this.ws.send(JSON.stringify({
+                    this.ws[member].send(JSON.stringify({
                         remoteAsyncFunction: true,
                         emitterName: d.emitterName,
                         functionName: functionToCreate,
@@ -320,46 +338,43 @@ function createGlobalEmitterObjectAsncyFunctions(d) {
         };
         //***************
     }
-}
+    global[d.emitterName].getMembers = async function (...args) { return this.members}
+
+
+    }
 
 
 webSocketEmitter.on('browserConnect', (id) => {
     console.log('emit connect', id);
-
     id = id.split('.'); // id[0] is sessionId & id[1] is requestId
-
-    console.log('emit connect', id[1]);
+    console.log('emit connect session id:', id[1]);
     dbo.collection('requestLog').findOneAndUpdate({_id: database.ObjectID(id[1])},
         {
             $set: {
                 websocketOpenTime: new Date(),
-                activeWebSocket:true
+                activeWebSocket: true
             }
-        },{returnOriginal:false}).then((rslt) => {
-            database.emit('requestLog',rslt.value)
-
-        }).catch(
-     (e) => {
-        console.log('Error updating session', e);
-
-    });
+        }, {returnOriginal: false}).then((rslt) => {
+        database.emit('requestLog', rslt.value);
+    }).catch(
+        (e) => {
+            console.log('Error updating session', e);
+        });
 });
-webSocketEmitter.on('browserClose', (id,connectTime) => {
+webSocketEmitter.on('browserClose', (id, connectTime) => {
     id = id.split('.'); // id[0] is sessionId & id[1] is requestId
     console.log('-----------------------++++++++++++++++++++++emit disconnect', id);
     dbo.collection('requestLog').findOneAndUpdate({_id: database.ObjectID(id[1])},
         {
             $set: {
                 websockeCloseTime: new Date(),
-                activeWebSocket:false,
-                connectedTimeMinutes: (new Date()-connectTime)/60000
+                activeWebSocket: false,
+                connectedTimeMinutes: (new Date() - connectTime) / 60000
             }
-        },{returnOriginal:false}).then((rslt) => {
-        database.emit('requestLog',rslt.value)
-
+        }, {returnOriginal: false}).then((rslt) => {
+        database.emit('requestLog', rslt.value);
     }).catch(
         (e) => {
             console.log('Error updating session', e);
-
         });
 });
