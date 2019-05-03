@@ -60,9 +60,8 @@ udpSocket.startUdpServer = function () {
 udpSocket.sendObject = function (data) { // convert to promise?
     udpSocket.send(JSON.stringify(data), 41235, '224.0.0.49');
 };
-udpSocket.discover = async function (unitType = 'all') {
-    console.log(unitType);
-    udpSocket.sendObject({messageType: 'discover', unitType: unitType});
+udpSocket.discover = async function (systemType = 'ALL') {
+    udpSocket.sendObject({messageType: 'discover', systemType: systemType});
 };
 udpSocket.bindHome = async function (id, home) {
     udpSocket.sendObject({messageType: 'bindHome', id: id, home: home});

@@ -9,7 +9,7 @@ export function createGlobalEmitterObjectFunctions(d) {
 function createGlobalEmitterObjectAsncyFunctions(d) {
     for (let i = 0; i < d.asyncFunctions.length; ++i) {
         let functionToCreate = d.asyncFunctions[i];
-        console.log('functionToCreate', functionToCreate, d.emitterName);
+        console.log(`Creating function ${d.emitterName}:${functionToCreate}`)
         // this is the return hook function
         window[d.emitterName][functionToCreate] = async function (...args) {
             // create a random event to subscribe to - to await the return value
@@ -34,6 +34,7 @@ function createGlobalEmitterObjectAsncyFunctions(d) {
                 }, resolve, reject);
             });
         };
+        window[d.emitterName].emit(`${functionToCreate}Available`)
     }
 }
 
@@ -41,7 +42,7 @@ function createGlobalEmitterObjectAsncyFunctions(d) {
 export function createEventEmitterObjects(subscribeEvents) {
     //console.log(subscribeEvents, subscribeEvents.length)
     for (var i = 0; i < subscribeEvents.length; ++i) {
-        console.log(Object.keys(subscribeEvents[i]));
+        //console.log(Object.keys(subscribeEvents[i]));
         window[Object.keys(subscribeEvents[i])] = {};
         eventify(window[Object.keys(subscribeEvents[i])]);
     }

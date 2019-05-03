@@ -52,6 +52,13 @@ module.exports = {
 
     },
 
+    trace:function() {
+        oldconsole.log("------TRACE--------")
+
+        oldconsole.info(util.format( util.format.apply(this, arguments)))
+
+    },
+
     error: function() {
 
 

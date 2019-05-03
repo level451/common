@@ -23,22 +23,12 @@ module.exports.startWebSocketServer = function (server) {
         if (webSocket[ws.id]) {
             ws.id += '.' + Math.random().toString();
         }
-        console.log('Connected Clients:' + wss.clients.size, ws.id);
         console.log('New WebSocket Connection ID:' + ws.id + ' systemType:' + ws.systemType + ' Total Connections:' + wss.clients.size);
-        // if (parameters.subscribeEvents) {
-        //     try {
-        //         ws.subscribeEvents = JSON.parse(parameters.subscribeEvents)
-        //         subscribeEvents(ws)
-        //
-        //     } catch (e) {
-        //         console.log('Failed to parse subscribed events', parameters.subscribeEvents)
-        //     }
-        // }
         webSocket[ws.id] = ws;
         if (ws.systemType == 'browser') {
             webSocketEmitter.emit('browserConnect', ws.id);
         } else {
-            webSocketEmitter.emit('connect', ws.id);
+            webSocketEmitter.emit('connect', {id:ws.id,systemType:ws.systemType});
             console.log('systemType', ws.systemType);
         }
         ws.on('message', function incoming(message) {
@@ -87,6 +77,7 @@ module.exports.startWebSocketServer = function (server) {
             if (obj.remoteAsyncFunction) {
                 // call to an Asyncfunction from the remote
                 // this would come in from a web browser
+                console.log('remote async')
                 if (global[obj.emitterName]) {
                     global[obj.emitterName][obj.functionName](...obj.args).then(function (...args) {
                         // here I got the data back
@@ -101,7 +92,7 @@ module.exports.startWebSocketServer = function (server) {
                         //remoteEmit(obj.emitterName,obj.returnEventName,...args)
                     });
                 } else {
-                    console.log(obj.args);
+                        //object doesnt exsist anymore
                     this.send(JSON.stringify({
                             remoteEmit: true,
                             emitter: obj.emitterName,
@@ -150,7 +141,7 @@ module.exports.startWebSocketServer = function (server) {
             if (ws.systemType == 'browser') {
                 webSocketEmitter.emit('browserClose', ws.id, ws.connectTime);
             } else {
-                webSocketEmitter.emit('close', ws.id);
+                webSocketEmitter.emit('close', {id:ws.id,systemType:ws.systemType});
             }
         });
     });
@@ -233,6 +224,7 @@ function subscribeEvents(ws) {
                         }
                     }
                 }
+
                 ws.send(JSON.stringify(emitterDefinition));
             }
 // *****
@@ -373,7 +365,7 @@ function createGlobalEmitterObjectAsncyFunctions(d) {
 webSocketEmitter.on('browserConnect', (id) => {
     console.log('emit connect', id);
     id = id.split('.'); // id[0] is sessionId & id[1] is requestId
-    console.log('emit connect session id:', id[1]);
+    //console.log('emit connect session id:', id[1]);
     dbo.collection('requestLog').findOneAndUpdate({_id: database.ObjectID(id[1])},
         {
             $set: {
@@ -404,3 +396,7 @@ webSocketEmitter.on('browserClose', (id, connectTime) => {
             console.log('Error updating session', e);
         });
 });
+
+webSocketEmitter.getConnetions = async function (unitType = 'all') {
+    return unitType
+};

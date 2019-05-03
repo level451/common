@@ -8,21 +8,21 @@ if (location.protocol === 'https:') {
 } else {
     var wss = new WebSocket('ws://' + window.location.hostname + ':' + window.location.port +
         '/?systemType=browser&id=' + sessionDocument._id + '.' + requestId);
-    //+ '&subscribeEvents=' + JSON.stringify(subscribeEvents))
     console.log('Using Standard Websocket');
 }
-//eventify(wss);
+eventify(wss);
 
 
 function on(...args) {
-  //console.log('here')
-  //  wss.on(...args);
+    //genius function
+   wss.on(...args);
 }
 
 
 wss.onopen = function () {
-//    this.emit('open', '---------------');
     console.log('websocket open');
+    wss.emit('open', '---------------');
+
 
 };
 wss.onmessage = function (evt) {
@@ -69,7 +69,9 @@ function subscribeToRemoteObjects(eventsToSubscribeTo) {
 
 function startWebsocket(subscribeEvents = {}) {
     remoteObject.createEventEmitterObjects(subscribeEvents);
+    // once it is open subscribe to events for reomte objects
     wss.onopen = function () {
+        wss.emit('open');
         console.log('websocket open');
         subscribeToRemoteObjects(subscribeEvents);
     };

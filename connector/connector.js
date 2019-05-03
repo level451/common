@@ -3,6 +3,7 @@ const EventEmitter = require('events');
 const wscEmitter = new EventEmitter();
 const udpServer = require('./udpServer');
 wscEmitter.connected = false;
+wscEmitter.id = ''
 /*
 *
 *
@@ -17,10 +18,11 @@ module.exports.udpServer = udpServer;
 var ws = {};
 var sid;
 var hasConnected = false;
-module.exports.connect = function (remoteAddress, useSecureWebsocket, systemType, id) {
+wscEmitter.connect = function (remoteAddress, useSecureWebsocket, systemType, id) {
     if (!id) {
-        id = 'RandomId:' + Math.random().toString();
+        return false
     }
+    wscEmitter.id = id;
     connectionParameters = {
         remoteAddress: remoteAddress,
         useSecureWebsocket: useSecureWebsocket,
@@ -121,7 +123,7 @@ module.exports.sendObjectDefinitionDataToRemote = function (emitterName, emitter
     let emitterDefinition = {
         emitterDefinition: true,
         emitterName: emitterName,
-        emitterId: localSettings.ServiceInfo.id,
+        emitterId: localSettings.ServiceInfo.id, 
         asyncFunctions: [],
     };
     for (var prop in emitter) {
@@ -145,7 +147,7 @@ function send(objectToSend) {
             console.log('cant send failed', e, d);
         }
     } else {
-        console.trace('cant send socket closed', objectToSend);
+        console.error('cant send socket closed', objectToSend);
     }
 }
 
