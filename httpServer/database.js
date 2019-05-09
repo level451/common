@@ -25,6 +25,7 @@ database.getSessionByRequestLogId = async function (id) {
 database.getSessionLog = async function (limit = 2,skip = 0,filter = {}) {
     try {
         let rslt = await dbo.collection('Session').find(filter).limit(limit).skip(skip).project({userId: 0}).sort({sessionLastAccessed: -1}).toArray();
+
         return rslt;
     } catch (e) {
         console.log(e);
@@ -47,7 +48,31 @@ database.getRequestLogDistinct = async function (fields = '',filter = {}) {
         console.log(e);
     }
 };
+database.getSettings = async function (type = 'system') {
 
+    try {
+        let rslt = await dbo.collection('settings').find({type:type}).project({_id:0,type: 0}).toArray();
+            console.log(rslt[0])
+        return rslt[0]
+    } catch (e) {
+        console.log(e);
+    }
+};
+database.updateSettings = async function (type ,data) {
+    try {
+        let rslt = await dbo.collection('settings').updateOne({type: type},
+            {$set:data} ,{upsert:true});
+
+
+        return rslt;
+    } catch (e) {
+        console.log(e);
+    }
+};
+
+database.error = async function (type ,data) {
+    throw 400;
+}
 module.exports = database;
 
 const MongoClient = require('mongodb').MongoClient;

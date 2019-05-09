@@ -12,16 +12,19 @@ let filterButtons = document.getElementById('filterButtons').innerHTML;
 ws.startWebsocket(subscribeEvents);
 // test :
 //httpServer.getSessionLog().then(function(x){console.log(x)})
-database.on('ready', () => {
+database.once('getSessionLogAvailable', () => {
     database.getSessionLog(sessionHistoyDisplayLength).then(data => {
         sessionData = data;
         drawSessionTable();
     });
+});
+database.once('getRequestLogAvailable', () => {
     database.getRequestLog(20, 0).then(data => {
         requestLog = data;
         drawRequestTable();
     });
 });
+//emited from websocket every time a new request is made
 database.on('requestLog', (d => {
     let indexValue = requestLog.findIndex(o => o._id == d._id);
     if (indexValue == -1) {
@@ -39,7 +42,6 @@ function drawRequestTable() {
     let table = document.getElementById('requestLogTable');
     if (!table.tBodies[0]) {
         var tbody = table.createTBody();
-        console.log('create');
     } else {
         var tbody = table.tBodies[0];
         // clear the table
@@ -70,9 +72,7 @@ function drawSessionTable() {
     let table = document.getElementById('sessionInfoTable');
     if (!table.tBodies[0]) {
         var tbody = table.createTBody();
-        console.log('create');
     } else {
-        console.log('else');
         var tbody = table.tBodies[0];
         // clear the table
         tbody.innerHTML = '';
@@ -100,7 +100,6 @@ function detailsIpInfo(o) {
     if (!o || o.city == undefined) {
         return '-';
     } else {
-        console.log(o);
         // have ipInfo
         let details = `<details><summary>${o.city},${o.region_code}</summary><ul>
 <li>TimeZone:${o["time_zone"].abbr}</li>
@@ -115,8 +114,8 @@ function detailsIpInfo(o) {
 <li>Abuser:${o.threat["is_known_abuser"]}</li>
 <li>Threat:${o.threat["is_threat"]}</li>
 <li>Bogon:${o.threat["is_bogon"]}</li>
-</ul></details>`
-        return details
+</ul></details>`;
+        return details;
     }
 }
 
@@ -172,16 +171,16 @@ function nestedDetails(d) {
         o[date].details +=
             `<details ontoggle=getRequestLogDetails(this) id="${e.requestId}" style="margin-left: 10px"><summary>
             ${formatDate.toMMDDHHMM(e.reqDate)} ${e.page}</summary>
-            <p>Loading...</p></details>`
+            <p>Loading...</p></details>`;
         ++o[date].count;
     });
     for (const e in o) {
     }
     let v = '';
-    v += `<details><summary>${formatDate.toMMDDHHMM(d[0].reqDate)} ${d[0].page}</summary>`
+    v += `<details><summary>${formatDate.toMMDDHHMM(d[0].reqDate)} ${d[0].page}</summary>`;
     for (const e in o) {
         v += `<details style="margin-left: 10px"><summary >${e}(${o[e].count})</summary>
-        ${o[e].details}</details>`
+        ${o[e].details}</details>`;
     }
     v += "</details>";
     return v;
@@ -194,10 +193,10 @@ window.getRequestLogDetails = function (e) {
         database.getRequestLogById(e.id).then((r) => {
             if (r) {
                 details.innerHTML =
-`RemoteAddress:${r.remoteAddress}<br>
+                    `RemoteAddress:${r.remoteAddress}<br>
 Active: ${r.activeWebSocket}<br>
 ConnectedTime: ${Number((r.activeWebSocket) ? ((new Date() - new Date(r.websocketOpenTime)) / 60000) : r.connectedTimeMinutes).toFixed(1)} Minutes <br>
-userAgent: ${r.userAgent}`
+userAgent: ${r.userAgent}`;
             } else {
                 details.innerHTML + 'Data Not Available';
             }

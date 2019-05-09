@@ -5,11 +5,34 @@
 
 <div class="top">
     <hr id="topLine">
-    <img  id="hamburger" onclick="openNav()" src="images/hamburger.png">
-    <img id="logo"  src="images/sailogo.png">
-    <p id="title">CS6 Console</p>
+    <img  id="hamburger" onclick="openLeftSideMenu()" src="images/hamburger.png">
+    <img id="logo"  src="images/logo.png">
+    <p id="title"><%=global.systemName%></p>
     <p id="pagename"> <%=pageName%></p>
     <br>
     <hr id="bottomLine">
 </div  >
+<%- include("leftMenu.ejs") %>
+<script>
+    var leftSideMenuOpen = false;
 
+    function openLeftSideMenu() {
+        if(leftSideMenuOpen){
+            closeLeftSideMenu();
+            return;
+        }
+        document.getElementById("leftSideMenu").style.width = "225px";
+        document.getElementById("leftSideMenu").style.opacity=1;
+        document.getElementById("body").style.marginLeft = "225px";
+        leftSideMenuOpen = true
+    }
+
+    function closeLeftSideMenu() {
+        document.getElementById("leftSideMenu").style.width = 0;
+        document.getElementById("leftSideMenu").style.opacity=0;
+        document.getElementById("body").style.marginLeft = "0px";
+        leftSideMenuOpen = false;
+    }
+
+
+</script>

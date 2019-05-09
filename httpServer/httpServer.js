@@ -8,11 +8,9 @@ var options;
 const express = require('express');
 const app = express();
 const fs = require('fs');
-
 module.exports = function (startOptions = {}) {
     options = startOptions;
     if (!options.useHttps) options.useHttps = false;
-
     const cookieParser = require('cookie-parser');
     const bodyParser = require('body-parser');
     const urlencodedParser = bodyParser.urlencoded({extended: false});
@@ -90,9 +88,9 @@ module.exports = function (startOptions = {}) {
             userDocument: req.userDocument
         });
     });
+
+
 // we will pass our 'app' to 'http' server
-
-
     function processLogin(req, res) {
 // from the /login POST
         dbo.collection('Users').findOne({_id: database.ObjectID(req.signedCookies.uid)}).then((o) => {
@@ -191,7 +189,8 @@ module.exports = function (startOptions = {}) {
         // any vars in there will be available to the webpage
         // if you include varsToJavascript.ejs
         res.locals.javascript = {};
-        res.locals.javascript.localSettings = global.localSettings
+        res.locals.javascript.localSettings = global.localSettings;
+        res.locals.javascript.settings = global.settings;
         // this is called for every request
         // except for the login get and post, and access to public
         // If the user is signed in (has the signed cookie called Authorized
@@ -375,8 +374,8 @@ module.exports.pageNotFound = function (req, res, next) {
     // add custom page not found here
     next();
 };
-module.exports.listenHttp = function (){
-    console.log('Called listed')
+module.exports.listenHttp = function () {
+    console.log('Called listed');
     if (options.useHttps) {
         var https = require('https');
     } else {
@@ -403,5 +402,4 @@ module.exports.listenHttp = function (){
         );
     }
     webSocketServer.startWebSocketServer(server);
-
 };

@@ -15,34 +15,39 @@ eventify(wss);
 
 function on(...args) {
     //genius function
-   wss.on(...args);
+    wss.on(...args);
 }
 
 
 wss.onopen = function () {
     console.log('websocket open');
     wss.emit('open', '---------------');
-
-
 };
 wss.onmessage = function (evt) {
     try {
         // SEE IF THE EVENT DATA IS AN OBJECT
         let obj = JSON.parse(evt.data);
         if (obj.remoteEmit) {
-            window[obj.emitter].emit(obj.eventName, ...obj.args);
+            if (obj.reject) { // reject the promise with an error
+                window[obj.emitter].emit(obj.eventName, obj);
+            } else {
+                if (obj.args) {
+                    window[obj.emitter].emit(obj.eventName, obj.args);
+                } else {
+                    window[obj.emitter].emit(obj.eventName, '');
+                }
+            }
         } else if (obj.emitterDefinition) {
             // this is an emitter Definition - the basic remote object
             // we are going to create the hooks to the remote function
             //console.log(obj)
             remoteObject.createGlobalEmitterObjectFunctions(obj);
             // the we are going to use its remote emitter to emit that it is ready
-            window[obj.emitterName].emit('ready', '');
-        } else if(obj.logOut){
-            window.location.href='/login'
-        }
-        else {
-          //  this.emit('message', obj);
+            //window[obj.emitterName].emit('ready', '');
+        } else if (obj.logOut) {
+            window.location.href = '/login';
+        } else {
+            //  this.emit('message', obj);
             console.log('??', obj);
         }
     } catch (e) {
@@ -56,9 +61,9 @@ wss.onerror = function (err) {
     wss.close();
 };
 wss.onclose = function () {
-  //  this.emit('close', '');
+    //  this.emit('close', '');
     console.log('websocket close reconecting websocket');
-    location.reload()
+    location.reload();
 };
 
 

@@ -7,7 +7,7 @@
 
 <head>
     <title><%= pageName %></title>
-    <link rel="icon" href="./images/favicon.ico" type="image/ico" sizes="16x16">
+    <link rel="shortcut icon" href="images/favicon.png"/>
 </head>
 
 
@@ -15,77 +15,90 @@
 <!-- line below is commented out-->
 <% include leftMenu.ejs %>
 
-<div class="outer">
+<div id="body">
 
-    Web Session History
+    <div class="outer">Web Session History</div>
     <hr>
 
-</div>
 
-<div>
-    <!--
-    <button id='sessionNextRecords'><- Next</button>
-    <button id='sessionPrevRecords'>Prev -></button>
-    -->
-    <table id="sessionInfoTable" width='100%'>
-        <colgroup>
-            <col style="width: 100px;">
-            <col style="width: 100px;">
-            <col>
-            <col style="width: 150px;">
-            <col style="width: 100px;">
-            <col style="width: 75px;">
-        </colgroup>
-        <thead>
-        <tr>
-            <th>Time</th>
-            <th>User</th>
-            <th>Last Page</th>
-            <th>Location</th>
-            <th>LocalIp</th>
-            <th>Pages</th>
-        </tr>
-
-        </thead>
-        <tfoot>
+    <div>
+        <!--
+        <button id='sessionNextRecords'><- Next</button>
+        <button id='sessionPrevRecords'>Prev -></button>
+        -->
+        <table id="sessionInfoTable" width='100%'>
+            <colgroup>
+                <col style="width: 100px;">
+                <col style="width: 100px;">
+                <col>
+                <col style="width: 150px;">
+                <col style="width: 100px;">
+                <col style="width: 75px;">
+            </colgroup>
+            <thead>
             <tr>
-                <th><button id='sessionNextRecords'><- Next</button></th>
-                <th><button id='sessionPrevRecords'>Prev -></button></th>
+                <th>Time</th>
+                <th>User</th>
+                <th>Last Page</th>
+                <th>Location</th>
+                <th>LocalIp</th>
+                <th>Pages</th>
             </tr>
-        </tfoot>
-    </table>
-</div>
-<hr>
-<div class="outer">
 
-    Web Page History
+            </thead>
+            <tfoot>
+            <tr>
+                <th>
+                    <button id='sessionNextRecords'><- Next</button>
+                </th>
+                <th>
+                    <button id='sessionPrevRecords'>Prev -></button>
+                </th>
+            </tr>
+            </tfoot>
+        </table>
+    </div>
     <hr>
+    <div class="outer">
 
-</div>
-<div style="width:100%;height: 600px;overflow:auto">
+        Web Page History
+        <hr>
 
-    <table id='requestLogTable' width='100%'>
-        <colgroup>
-            <col style="width: 120px;">
-            <col style="width: 100px;">
-            <col style="width: 200px;">
+    </div>
+    <div style="width:100%;height: 600px;overflow:auto">
 
-            <col>
-        </colgroup>
-        <thead>
-        <tr>
-            <th>Time</th>
-            <th>User</th>
-            <th>Page</th>
-            <th>IPAddress</th>
-        </tr>
-        <tr id='filterButtons'>
-            <th><button id="filterReset">Filter Reset</button></th>
-            <th><button id="filterUser">Filter User</button></th>
-            <th><button id="filterPage">All Pages</button></th>
-            <th><button id="filterIpAddress">Filter IP Address</button></th>
+        <table id='requestLogTable' width='100%'>
+            <colgroup>
+                <col style="width: 120px;">
+                <col style="width: 100px;">
+                <col style="width: 200px;">
 
-            <td><button id="filterOptions">Filter Options</button></td>
+                <col>
+            </colgroup>
+            <thead>
+            <tr>
+                <th>Time</th>
+                <th>User</th>
+                <th>Page</th>
+                <th>IPAddress</th>
+            </tr>
+            <tr id='filterButtons'>
+                <th>
+                    <button id="filterReset">Filter Reset</button>
+                </th>
+                <th>
+                    <button id="filterUser">Filter User</button>
+                </th>
+                <th>
+                    <button id="filterPage">All Pages</button>
+                </th>
+                <th>
+                    <button id="filterIpAddress">Filter IP Address</button>
+                </th>
+
+                <td>
+                    <button id="filterOptions">Filter Options</button>
+                </td>
                 <!--
                 <input type="checkbox" id="filterActive">  Active Only<br>
                 <input type="checkbox" id="filterPageNotFound">  Page Not Found<br>
@@ -93,19 +106,24 @@
                 -->
 
 
-        </tr>
+            </tr>
 
-        </thead>
-        <tfoot>
-        <tr>
-            <th><button id='requestLogNextRecords'><- Next</button></th>
-            <th><button id='requestLogPrevRecords'>Prev -></button></th>
-        </tr>
-        </tfoot>
+            </thead>
+            <tfoot>
+            <tr>
+                <th>
+                    <button id='requestLogNextRecords'><- Next</button>
+                </th>
+                <th>
+                    <button id='requestLogPrevRecords'>Prev -></button>
+                </th>
+            </tr>
+            </tfoot>
 
-    </table>
+        </table>
 
 
+    </div>
 </div>
 </body>
 
