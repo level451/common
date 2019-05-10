@@ -1,5 +1,8 @@
 <script>
-    <% Object.keys(locals.javascript).forEach((o)=>{ %>
-    var <%= o %> = <%- JSON.stringify(locals.javascript[o]) %>
-    <% }) %>
+    <% Object.keys(locals.javascript).forEach((o) => {
+        if (locals.javascript[o]){
+    %>
+    var <%= o %>=<%- JSON.stringify(locals.javascript[o]) %>
+    <%}
+    }) %>
 </script>

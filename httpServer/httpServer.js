@@ -15,7 +15,6 @@ module.exports = function (startOptions = {}) {
     const bodyParser = require('body-parser');
     const urlencodedParser = bodyParser.urlencoded({extended: false});
     const authenticator = require('./Authenticator');
-    console.log(app.get('views'), process.cwd(), __dirname);
     // set the views directory to include project views && build ins
     app.set('views', [process.cwd() + '/views', __dirname + '/views']);
     // express knows to look for ejs becease the ejs package is installed
@@ -375,7 +374,6 @@ module.exports.pageNotFound = function (req, res, next) {
     next();
 };
 module.exports.listenHttp = function () {
-    console.log('Called listed');
     if (options.useHttps) {
         var https = require('https');
     } else {
