@@ -1,13 +1,8 @@
 const EventEmitter = require('events');
-const database = new EventEmitter()
-
-
-
-
+const database = new EventEmitter();
 database.getRequestLogById = async function (id) {
     try {
-        let rslt = await  dbo.collection('requestLog').find({_id:database.ObjectID(id)}).toArray()
-
+        let rslt = await dbo.collection('requestLog').find({_id: database.ObjectID(id)}).toArray();
         return rslt[0];
     } catch (e) {
         console.log(e);
@@ -15,24 +10,22 @@ database.getRequestLogById = async function (id) {
 };
 database.getSessionByRequestLogId = async function (id) {
     try {
-        let rslt = await  dbo.collection('Session').find({'urlHistory.requestId':database.ObjectID(id)}).toArray()
-
+        let rslt = await dbo.collection('Session').find({'urlHistory.requestId': database.ObjectID(id)}).toArray();
         return rslt;
     } catch (e) {
         console.log(e);
     }
 };
-database.getSessionLog = async function (limit = 2,skip = 0,filter = {}) {
+database.getSessionLog = async function (limit = 2, skip = 0, filter = {}) {
     try {
         let rslt = await dbo.collection('Session').find(filter).limit(limit).skip(skip).project({userId: 0}).sort({sessionLastAccessed: -1}).toArray();
-
         return rslt;
     } catch (e) {
         console.log(e);
     }
 };
-database.getRequestLog = async function (limit = 50,skip = 0,filter = {}) {
-    console.log(filter)
+database.getRequestLog = async function (limit = 50, skip = 0, filter = {}) {
+    console.log(filter);
     try {
         let rslt = await dbo.collection('requestLog').find(filter).limit(limit).skip(skip).project({userId: 0}).sort({_id: -1}).toArray();
         return rslt;
@@ -40,45 +33,39 @@ database.getRequestLog = async function (limit = 50,skip = 0,filter = {}) {
         console.log(e);
     }
 };
-database.getRequestLogDistinct = async function (fields = '',filter = {}) {
+database.getRequestLogDistinct = async function (fields = '', filter = {}) {
     try {
-        let rslt = await dbo.collection('requestLog').distinct(fields,filter);
+        let rslt = await dbo.collection('requestLog').distinct(fields, filter);
         return rslt;
     } catch (e) {
         console.log(e);
     }
 };
 database.getSettings = async function (type = 'system') {
-
     try {
-        let rslt = await dbo.collection('settings').find({type:type}).project({_id:0,type: 0}).toArray();
-            console.log(rslt[0])
-        return rslt[0]
+        let rslt = await dbo.collection('settings').find({type: type}).project({_id: 0, type: 0}).toArray();
+        console.log(rslt[0], rslt, type);
+        return (rslt[0] || {});
     } catch (e) {
         console.log(e);
     }
 };
-database.updateSettings = async function (type ,data) {
+database.updateSettings = async function (type, data) {
     try {
         let rslt = await dbo.collection('settings').updateOne({type: type},
-            {$set:data} ,{upsert:true});
-
-
+            {$set: data}, {upsert: true});
         return rslt;
     } catch (e) {
         console.log(e);
     }
 };
-
-database.error = async function (type ,data) {
+database.error = async function (type, data) {
     throw 400;
-}
+};
 module.exports = database;
-
 const MongoClient = require('mongodb').MongoClient;
 module.exports.ObjectID = require('mongodb').ObjectID;
 //const assert = require('assert');
-
 // Connection URL
 if (!localSettings) {
     console.log('WARNING - localSetting not found attempting to connect with default settings');
@@ -90,10 +77,7 @@ if (!localSettings) {
 var client;
 // Database Name
 // Use connect method to connect to the server
-
-
-
-module.exports.getMongoConnection = function (databaseName,requiredCollections) {
+module.exports.getMongoConnection = function (databaseName, requiredCollections) {
     return new Promise(function (resolve, reject) {
         MongoClient.connect(url, {useNewUrlParser: true}).then((client) => {
             checkIfCollectionsExist(client.db(databaseName));
@@ -174,14 +158,14 @@ module.exports.getMongoConnection = function (databaseName,requiredCollections) 
         });
     }
 };
-exports.logSystemInfo = function (mac, event, data) {
+database.logSystemInfo = function (mac, event, data) {
     dbo.collection('SystemInfo').updateOne({mac: mac}, {$set: {[event]: data}}, {upsert: true}, (err, resp) => {
         if (err) {
             console.log("Problem logging system info", err);
         }
     });
 };
-exports.getSystemInfo = function (filter, cb) {
+database.getSystemInfo = function (filter, cb) {
     dbo.collection('SystemInfo').find(filter).toArray((err, rslt) => {
         if (!err) {
             var outputObject = {};
@@ -201,10 +185,9 @@ function clearSystemInfoConnectionState(db) {
             console.log("Problem clearing systemInfo connectionState", err);
         }
     });
-    db.collection('requestLog').updateMany({activeWebSocket:true}, {$set: {activeWebSocket: false}}, (err, rslt) => {
+    db.collection('requestLog').updateMany({activeWebSocket: true}, {$set: {activeWebSocket: false}}, (err, rslt) => {
         if (err) {
             console.log("Problem clearing systemInfo connectionState", err);
         }
     });
-
 }

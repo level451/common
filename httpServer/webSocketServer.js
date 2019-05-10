@@ -9,15 +9,26 @@ module.exports.startWebSocketServer = function (server) {
     const wss = new WebSock.Server({server});
     wss.on('connection', function connection(ws, req) {
         const parameters = require('url').parse(req.url, true).query;
+        ws.systemType = parameters.systemType;
+        ws.id = parameters.id;
+        // make sure we allow this connection
+        //
+        // RIO CHECK
+        if (ws.systemType == 'RIO' && !settings.connectedRios[ws.id]) {
+            console.log(`Disconnected RIO &{ws.id} tried to connect - sending disconnect command via udp`);
+            if (udpServer) {
+                udpServer.unbindHome(ws.id);
+                ws.close();
+                return;
+            }
+        }
         if (!parameters.id && !parameters.browser) { //reject websocket wequests that are not from approved mac addresses
             ws.close();
             return;
         }
-        ws.systemType = parameters.systemType;
         ws.mac = parameters.mac;
         ws.isAlive = true;
         ws.remoteAddress = ws._socket.remoteAddress;
-        ws.id = parameters.id;
         ws.connectTime = new Date();
         // in case of duplicate ids
         if (webSocket[ws.id]) {
@@ -62,7 +73,7 @@ module.exports.startWebSocketServer = function (server) {
                 if (global[obj.emitter] instanceof require("events").EventEmitter) {
                     // it's an emitter - emit the message
                     //global[obj.emitter].emit(obj.eventName, ...obj.args);
-                    global[obj.emitter].emit(obj.eventName,...obj.args);
+                    global[obj.emitter].emit(obj.eventName, ...obj.args);
                 } else {
                     global[obj.emitter] = new EventEmitter();
                     console.trace('New emiter created - should not happen now', obj.emitter);
@@ -92,10 +103,10 @@ module.exports.startWebSocketServer = function (server) {
                             args: args
                         }));
                         //remoteEmit(obj.emitterName,obj.returnEventName,...args)
-                    }).catch(function(args){
+                    }).catch(function (args) {
                         ws.send(JSON.stringify({
                             remoteEmit: true,
-                            reject:true,
+                            reject: true,
                             emitter: obj.emitterName,
                             eventName: obj.returnEventName,
                             args: args
@@ -105,10 +116,10 @@ module.exports.startWebSocketServer = function (server) {
                     //object doesnt exsist anymore
                     this.send(JSON.stringify({
                             remoteEmit: true,
-                            reject:true,
+                            reject: true,
                             emitter: obj.emitterName,
                             eventName: obj.returnEventName,
-                            args:  new Error('Object not here any more')
+                            args: new Error('Object not here any more')
                         })
                     );
                 }

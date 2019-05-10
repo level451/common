@@ -22,9 +22,12 @@ udpSocket.on('message', (msg, rinfo) => {
                     }, Math.round(Math.random() * 100));
                     break;
                 case 'bindHome':
+                    //this happens on the rio
                     if (msg.id == localSettings.ServiceInfo.id && !localSettings.home) {
                         console.log('new home binding info received', msg.home);
                         localSettings.home = msg.home;
+                        localSettings.name = msg.name;
+                        localSettings.description = msg.description;
                         require('fs').writeFileSync('localSettings.JSON', JSON.stringify(localSettings));
                         process.exit(100);
                     }
@@ -63,14 +66,22 @@ udpSocket.sendObject = function (data) { // convert to promise?
 udpSocket.discover = async function (systemType = 'ALL') {
     udpSocket.sendObject({messageType: 'discover', systemType: systemType});
 };
-udpSocket.bindHome = async function (id, home) {
-    udpSocket.sendObject({messageType: 'bindHome', id: id, home: home});
+
+udpSocket.bindHome = async function (id, home, rioInfo, name = id, description = id) {
+    // this all happens on the cs6 - from the webpage iosetup
+    udpSocket.sendObject({messageType: 'bindHome', id: id, home: home, name: name, description: description});
+    rioInfo.bonded = true;
+    rioInfo.localSettings.home = home;
+    delete rioInfo.connected;
+    global.settings.connectedRios[id] = rioInfo;
+    database.updateSettings('system', global.settings);
 };
 udpSocket.unbindHome = async function (id) {
     udpSocket.sendObject({messageType: 'unbindHome', id: id});
+    delete global.settings.connectedRios[id];
+    database.updateSettings('system', global.settings);
 };
 udpSocket.test = async function (...id) {
-    return [...id]
+    return [...id];
 };
-
 module.exports = udpSocket;
