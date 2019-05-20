@@ -36,6 +36,8 @@ udpSocket.on('message', (msg, rinfo) => {
                     if (msg.id == localSettings.ServiceInfo.id && localSettings.home) {
                         console.log('unbind command received - removing home info');
                         localSettings.home = null;
+                        localSettings.description = 'Available'
+                        localSettings.name = 'Not Bonded'
                         require('fs').writeFileSync('localSettings.JSON', JSON.stringify(localSettings));
                         process.exit(100);
                     }

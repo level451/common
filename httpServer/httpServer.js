@@ -28,13 +28,22 @@ module.exports = function (startOptions = {}) {
     // allow to loggin in to access the public folder
     // no ejs as javascript in there
     app.use(express.static(__dirname + '/public')); // set up the public directory as web accessible
+    app.use(express.static('public')); // set up the public directory as web accessible
+
     // also allow login if not logged in of course
     app.get('/login', function (req, res) {
         console.log('at login');
         res.clearCookie("Authorized");
         //   res.clearCookie("uid");
         //    res.clearCookie("sid");
-        dbo.collection('Users').findOne({_id: database.ObjectID(req.signedCookies.uid)}).then((o) => {
+        let uid = ''
+        try {
+            uid = database.ObjectID(req.signedCookies.uid);
+        } catch (e) {
+
+        }
+
+        dbo.collection('Users').findOne({_id: uid}).then((o) => {
             dbo.collection('requestLog').insertOne({
                 userName: ((o && o.userName) ? o.userName : 'Unknown'),
                 notAuthorized: true,
@@ -54,7 +63,6 @@ module.exports = function (startOptions = {}) {
     //this is how we make sure the user is logged in every page request
     app.use(verifyLogin);
     // dont need to log access to this folder
-    app.use(express.static('public')); // set up the public directory as web accessible
     app.use(express.static('securePublic')); // set up the public directory as web accessible
     app.use(express.static(__dirname + '/securePublic')); // set up the public directory as web accessible
     //log the request
@@ -92,9 +100,26 @@ module.exports = function (startOptions = {}) {
 // we will pass our 'app' to 'http' server
     function processLogin(req, res) {
 // from the /login POST
-        dbo.collection('Users').findOne({_id: database.ObjectID(req.signedCookies.uid)}).then((o) => {
-        });
+//         let uid = ''
+//         try {
+//             uid = database.ObjectID(req.signedCookies.uid);
+//         } catch (e) {
+//
+//         }
+//
+//         dbo.collection('Users').findOne({_id:uid}).then((o) => {
+//         });
         req.localIp = req.body.localIp;
+        res.cookie('test', 'true', {
+            maxAge: 1000 * 60 * 60 * 24 * 30,
+            secure: options.useHttps,
+            signed: true
+        });
+        res.cookie('Authorized', 'true', {
+            maxAge: 1000 * 60 * 60 * 24 * 30,
+            secure: options.useHttps,
+            signed: true
+        });
         if ('authenticationCode' in req.body) {
             console.log('auth code:' + JSON.stringify(req.body));
             dbo.collection('Users').findOne({userName: req.body.userName}, function (err, rslt) {
@@ -103,6 +128,7 @@ module.exports = function (startOptions = {}) {
                 // added alternate secret password for now
                 if (rslt != null && (authenticator.authenticate(rslt.secretKey, req.body.authenticationCode) || req.body.authenticationCode == 'cheese')) {
                     // set the Auth cookie valid for 30 days
+                    console.log('@set cookie')
                     res.cookie('Authorized', 'true', {
                         maxAge: 1000 * 60 * 60 * 24 * 30,
                         secure: options.useHttps,
@@ -114,6 +140,7 @@ module.exports = function (startOptions = {}) {
                         secure: options.useHttps,
                         signed: true
                     });
+
                     if (req.body.localIp) {
                         res.cookie('localIp', req.body.localIp, {
                             secure: options.useHttps,
@@ -142,9 +169,21 @@ module.exports = function (startOptions = {}) {
                     }).then((o) => {
                         database.emit('requestLog', o.ops[0]);
                     });
+                    // If have have a cookie indicating where they wanted to go after login
+                    // send them there
+
+                    console.log('++cookies========',JSON.stringify(res.signedCookies))
+
                     if (req.signedCookies.pageAfterLogin) {
                         res.clearCookie("pageAfterLogin");
-                        res.redirect(req.signedCookies.pageAfterLogin);
+                        // if there is a . ---
+                        if (req.signedCookies.pageAfterLogin.indexOf('.') == -1){
+                            res.redirect(req.signedCookies.pageAfterLogin);
+                        } else
+                        {
+                            res.redirect('/');
+                        }
+
                     } else {
                         res.redirect('/');
                     }
@@ -183,7 +222,7 @@ module.exports = function (startOptions = {}) {
 
 
     function verifyLogin(req, res, next) {
-        res.set('Cache-Control', 'no-store');
+        //res.set('Cache-Control', 'no-store');
         // set up the javascript obect
         // any vars in there will be available to the webpage
         // if you include varsToJavascript.ejs
@@ -193,6 +232,7 @@ module.exports = function (startOptions = {}) {
         // this is called for every request
         // except for the login get and post, and access to public
         // If the user is signed in (has the signed cookie called Authorized
+        console.log('cookies========',JSON.stringify(req.signedCookies))
         if (req.signedCookies.Authorized) {
             //render local settings if it doesnt exist
             // this only should happed on intital setup
@@ -204,7 +244,13 @@ module.exports = function (startOptions = {}) {
             // }
         } else { // no login cookie set
             //NOT AUTHORIZED AT THIS POINT
-            dbo.collection('Users').findOne({_id: database.ObjectID(req.signedCookies.uid)}).then((o) => {
+            let uid = ''
+            try {
+                 uid = database.ObjectID(req.signedCookies.uid);
+            } catch (e) {
+
+            }
+            dbo.collection('Users').findOne({_id:uid}).then((o) => {
                 console.log('------------', o);
                 dbo.collection('requestLog').insertOne({
                     userName: ((o && o.userName) ? o.userName : 'Unknown'),
