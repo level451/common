@@ -328,7 +328,7 @@ function createGlobalEmitterObject(d, ws) {
                 subscribeEvents(webSocket[each]);
             }
         }
-        webSocketEmitter.emit('newGlobalEmitterObject',d.emitterName)
+        webSocketEmitter.emit('newGlobalEmitterObject', d.emitterName);
     } else {
         console.log(`Adding Emitter ${d.emitterId} to Global emitter ${d.emitterName}`);
         // if not a new emiter - add this on to the members
@@ -345,7 +345,7 @@ function createGlobalEmitterObjectAsncyFunctions(d) {
         console.log('functionToCreate', functionToCreate, d.emitterName);
         // this is the return hook function
         //this saves the functionName , somehow this works where as functionToCreate
-        let functionName = functionToCreate
+        let functionName = functionToCreate;
         global[d.emitterName][functionToCreate] = async function (...args) {
             // create a random event to subscribe to - to await the return value
             let member = null;
@@ -361,7 +361,6 @@ function createGlobalEmitterObjectAsncyFunctions(d) {
             var returnEventName = Math.random().toString();
             //send the command to the remote
             if (this.ws[member].readyState == 1) {
-
                 try {
                     this.ws[member].send(JSON.stringify({
                         remoteAsyncFunction: true,
@@ -379,7 +378,7 @@ function createGlobalEmitterObjectAsncyFunctions(d) {
                 });
             }
         };
-     //   global[d.emitterName][functionToCreate].name = functionToCreate;
+        //   global[d.emitterName][functionToCreate].name = functionToCreate;
         //***************
     }
     // this function is added to all remote emiters
