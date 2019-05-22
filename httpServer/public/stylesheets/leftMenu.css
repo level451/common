@@ -1,5 +1,7 @@
-body {
+#body {
     font-family: Helvetica, Arial,sans-serif;
+    transition: 0.5s;
+
 }
 .menu{
     padding:  8px 8px 8px 32px;
@@ -36,7 +38,7 @@ body {
     display: block;
 }
 
-.sidenav a,details:hover {
+.sidenav a:hover,details:hover {
     color: #f1f1f1;
 }
 
@@ -52,7 +54,7 @@ body {
         margin-top: 106px;
     }
 
-    .sidenav a {
+    .sidenav a,details {
         font-size: 20px;
     }
     .menu{
