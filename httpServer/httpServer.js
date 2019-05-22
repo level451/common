@@ -232,7 +232,6 @@ module.exports = function (startOptions = {}) {
         // this is called for every request
         // except for the login get and post, and access to public
         // If the user is signed in (has the signed cookie called Authorized
-        console.log('cookies========',JSON.stringify(req.signedCookies))
         if (req.signedCookies.Authorized) {
             //render local settings if it doesnt exist
             // this only should happed on intital setup

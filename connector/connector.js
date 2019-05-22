@@ -64,7 +64,7 @@ function webSocketConnect(resolve, reject) {
         if (obj.remoteAsyncFunction) {
             // call to an Asyncfunction from the remote
             global[obj.emitterName][obj.functionName](...obj.args).then(function (...args) {
-                console.log('--', obj);
+                //console.log('--', obj);
                 remoteEmit(obj.emitterName, obj.returnEventName, ...args);
             });
         }

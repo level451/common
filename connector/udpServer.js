@@ -74,7 +74,10 @@ udpSocket.bindHome = async function (id, home, rioInfo, name = id, description =
     udpSocket.sendObject({messageType: 'bindHome', id: id, home: home, name: name, description: description});
     rioInfo.bonded = true;
     rioInfo.localSettings.home = home;
+    rioInfo.localSettings.name = name;
+    rioInfo.localSettings.description = description;
     delete rioInfo.connected;
+    delete rioInfo.messageType;
     global.settings.connectedRios[id] = rioInfo;
     database.updateSettings('system', global.settings);
 };

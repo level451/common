@@ -43,7 +43,7 @@ module.exports.startWebSocketServer = function (server) {
             console.log('systemType', ws.systemType);
         }
         ws.on('message', function incoming(message) {
-            // console.log(message)
+            //console.log(message)
             try {
                 var obj = JSON.parse(message);
             } catch (e) {
@@ -328,6 +328,7 @@ function createGlobalEmitterObject(d, ws) {
                 subscribeEvents(webSocket[each]);
             }
         }
+        webSocketEmitter.emit('newGlobalEmitterObject',d.emitterName)
     } else {
         console.log(`Adding Emitter ${d.emitterId} to Global emitter ${d.emitterName}`);
         // if not a new emiter - add this on to the members
@@ -338,12 +339,17 @@ function createGlobalEmitterObject(d, ws) {
 
 
 function createGlobalEmitterObjectAsncyFunctions(d) {
+    // this creates the function that is called for a remote object
+    // likely from the browser
     for (functionToCreate of d.asyncFunctions) {
         console.log('functionToCreate', functionToCreate, d.emitterName);
         // this is the return hook function
         global[d.emitterName][functionToCreate] = async function (...args) {
             // create a random event to subscribe to - to await the return value
             let member = null;
+            // if this first arg is an emiter id
+            // send the request there
+            // otherwise send it to the first one
             if (this.members.includes(args[0])) {
                 member = args[0];
                 args.shift();
@@ -372,6 +378,7 @@ function createGlobalEmitterObjectAsncyFunctions(d) {
         };
         //***************
     }
+    // this function is added to all remote emiters
     global[d.emitterName].getMembers = async function (...args) {
         return this.members;
     };
