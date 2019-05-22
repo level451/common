@@ -344,6 +344,8 @@ function createGlobalEmitterObjectAsncyFunctions(d) {
     for (functionToCreate of d.asyncFunctions) {
         console.log('functionToCreate', functionToCreate, d.emitterName);
         // this is the return hook function
+        //this saves the functionName , somehow this works where as functionToCreate
+        let functionName = functionToCreate
         global[d.emitterName][functionToCreate] = async function (...args) {
             // create a random event to subscribe to - to await the return value
             let member = null;
@@ -359,11 +361,12 @@ function createGlobalEmitterObjectAsncyFunctions(d) {
             var returnEventName = Math.random().toString();
             //send the command to the remote
             if (this.ws[member].readyState == 1) {
+
                 try {
                     this.ws[member].send(JSON.stringify({
                         remoteAsyncFunction: true,
                         emitterName: d.emitterName,
-                        functionName: functionToCreate,
+                        functionName: functionName,
                         returnEventName: returnEventName,
                         args: args
                     }));
@@ -376,6 +379,7 @@ function createGlobalEmitterObjectAsncyFunctions(d) {
                 });
             }
         };
+     //   global[d.emitterName][functionToCreate].name = functionToCreate;
         //***************
     }
     // this function is added to all remote emiters

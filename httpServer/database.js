@@ -59,6 +59,15 @@ database.updateSettings = async function (type, data) {
         console.log(e);
     }
 };
+database.updateEventLog = async function (data) {
+    try {
+
+        let rslt = await dbo.collection('eventLog').insertOne(data)
+    } catch (e) {
+        console.log(e);
+    }
+};
+
 database.error = async function (type, data) {
     throw 400;
 };
