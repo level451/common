@@ -23,7 +23,7 @@
         }
         document.getElementById("leftSideMenu").style.width = "225px";
         document.getElementById("leftSideMenu").style.opacity = "1";
-        document.getElementById("body").style.marginLeft = "225px";
+        document.getElementById("mainDiv").style.marginLeft = "225px";
         leftSideMenuOpen = true
     }
 
@@ -31,9 +31,27 @@
     function closeLeftSideMenu() {
         document.getElementById("leftSideMenu").style.width = 0;
         document.getElementById("leftSideMenu").style.opacity = 0;
-        document.getElementById("body").style.marginLeft = "0px";
+        document.getElementById("mainDiv").style.marginLeft = "0px";
         leftSideMenuOpen = false;
     }
+
+
+    // this code makes sure only one detail selector is open at a time
+    // it applies to all details elements in the class sidenavDetails
+    // Fetch all the details elements in the class.
+    const details = Array.from(document.querySelector(".sidenavDetails").querySelectorAll("details"));
+    // Add the onclick listeners.
+    details.forEach((targetDetail) => {
+        targetDetail.addEventListener("click", () => {
+            console.log('here')
+            // Close all the details that are not targetDetail.
+            details.forEach((detail) => {
+                if (detail !== targetDetail) {
+                    detail.removeAttribute("open");
+                }
+            });
+        });
+    });
 
 
 </script>

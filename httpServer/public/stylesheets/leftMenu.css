@@ -1,4 +1,4 @@
-#body {
+#mainDiv {
     font-family: Helvetica, Arial,sans-serif;
     transition: 0.5s;
 
@@ -30,7 +30,7 @@
     border-right: solid 1px #717171;
 }
 
-.sidenav a,details {
+.sidenav a,.sidenav details {
     padding: 8px 8px 8px 32px;
     text-decoration: none;
     font-size: 25px;
@@ -38,7 +38,7 @@
     display: block;
 }
 
-.sidenav a:hover,details:hover {
+.sidenav a:hover,.sidenav details:hover {
     color: #f1f1f1;
 }
 
