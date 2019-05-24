@@ -17,6 +17,7 @@ udpSocket.on('message', (msg, rinfo) => {
             // wait up to one second so everyone doesnt blast the line at once
             switch (msg.messageType) {
                 case 'discover':
+                    console.log(msg)
                     setTimeout(function () {
                         udpSocket.emit('discover', msg);
                     }, Math.round(Math.random() * 100));
