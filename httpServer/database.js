@@ -67,7 +67,15 @@ database.updateEventLog = async function (data) {
         console.log(e);
     }
 };
-
+database.getEventLog = async function (filter = {}) {
+    console.log(filter);
+    try {
+        let rslt = await dbo.collection('eventLog').find(filter).project({_id: 0}).toArray();
+        return rslt;
+    } catch (e) {
+        console.log(e);
+    }
+};
 database.error = async function (type, data) {
     throw 400;
 };

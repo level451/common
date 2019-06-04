@@ -17,7 +17,6 @@ udpSocket.on('message', (msg, rinfo) => {
             // wait up to one second so everyone doesnt blast the line at once
             switch (msg.messageType) {
                 case 'discover':
-                    console.log(msg)
                     setTimeout(function () {
                         udpSocket.emit('discover', msg);
                     }, Math.round(Math.random() * 100));
@@ -37,8 +36,8 @@ udpSocket.on('message', (msg, rinfo) => {
                     if (msg.id == localSettings.ServiceInfo.id && localSettings.home) {
                         console.log('unbind command received - removing home info');
                         localSettings.home = null;
-                        localSettings.description = 'Available'
-                        localSettings.name = 'Not Bonded'
+                        localSettings.description = 'Available';
+                        localSettings.name = 'Not Bonded';
                         require('fs').writeFileSync('localSettings.JSON', JSON.stringify(localSettings));
                         process.exit(100);
                     }
@@ -69,7 +68,6 @@ udpSocket.sendObject = function (data) { // convert to promise?
 udpSocket.discover = async function (systemType = 'ALL') {
     udpSocket.sendObject({messageType: 'discover', systemType: systemType});
 };
-
 udpSocket.bindHome = async function (id, home, rioInfo, name = id, description = id) {
     // this all happens on the cs6 - from the webpage iosetup
     udpSocket.sendObject({messageType: 'bindHome', id: id, home: home, name: name, description: description});

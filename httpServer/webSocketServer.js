@@ -89,7 +89,22 @@ module.exports.startWebSocketServer = function (server) {
             if (obj.remoteAsyncFunction) {
                 // call to an Asyncfunction from the remote
                 // this would come in from a web browser
-                //  console.log('remote async')
+                //
+                // reparse message with date fix
+                try {
+                    var obj = JSON.parse(message, function (key, value) {
+                            let reISO = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2}(?:\.\d*))(?:Z|(\+|-)([\d|:]*))?$/;
+                            if (typeof value === 'string') {
+                                var a = reISO.exec(value);
+                                if (a)
+                                    return new Date(value);
+                            }
+                            return value;
+                        }
+                    );
+                } catch (e) {
+                    console.log('failed to parse websocket obj:', e);
+                }
                 if (global[obj.emitterName]) {
 //                    global[obj.emitterName][obj.functionName](...obj.args).then(function (...args) {
                     global[obj.emitterName][obj.functionName](...obj.args).then(function (args) {
