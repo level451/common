@@ -31,9 +31,15 @@ module.exports.startWebSocketServer = function (server) {
         ws.remoteAddress = ws._socket.remoteAddress;
         ws.connectTime = new Date();
         // in case of duplicate ids
+        if (ws.systemType == 'RIO'){
+            global.settings.connectedRios[ws.id].connected = true
+            database.updateSettings('system',global.settings)
+        }
+
         if (webSocket[ws.id]) {
             ws.id += '.' + Math.random().toString();
         }
+
         console.log('New WebSocket Connection ID:' + ws.id + ' systemType:' + ws.systemType + ' Total Connections:' + wss.clients.size);
         webSocket[ws.id] = ws;
         if (ws.systemType == 'browser') {
@@ -160,6 +166,12 @@ module.exports.startWebSocketServer = function (server) {
         });
         ws.on('pong', heartbeat);
         ws.on('close', function () {
+
+            if (ws.systemType == 'RIO' && global.settings.connectedRios[ws.id]){
+                global.settings.connectedRios[ws.id].connected = false
+                database.updateSettings('system',global.settings)
+            }
+
             // remove all eventlisteners we subscribed to for BROWSERS
             // if this.subscribeEvents exists this websock is a browser this is subscribed to some remove emiter events
             if (this.subscribeEvents) {
