@@ -3,7 +3,7 @@ const EventEmitter = require('events');
 const wscEmitter = new EventEmitter();
 const udpServer = require('./udpServer');
 wscEmitter.connected = false;
-wscEmitter.id = ''
+wscEmitter.id = '';
 /*
 *
 *
@@ -14,13 +14,12 @@ wscEmitter.id = ''
 let connectionParameters = {};
 module.exports = wscEmitter;
 module.exports.udpServer = udpServer;
-
 var ws = {};
 var sid;
 var hasConnected = false;
 wscEmitter.connect = function (remoteAddress, useSecureWebsocket, systemType, id) {
     if (!id) {
-        return false
+        return false;
     }
     wscEmitter.id = id;
     connectionParameters = {
@@ -36,6 +35,10 @@ wscEmitter.connect = function (remoteAddress, useSecureWebsocket, systemType, id
 
 
 function webSocketConnect(resolve, reject) {
+    if (wscEmitter.connected == true) {
+        console.log('Already connected')
+        return false
+    }
     if (!localSettings || !localSettings.home.address) {
         console.log("Can't connect to MasterConsole - address not in localsettings");
         return;
@@ -63,8 +66,7 @@ function webSocketConnect(resolve, reject) {
         }
         if (obj.remoteAsyncFunction) {
             // call to an Asyncfunction from the remote
-
-            console.log(obj)
+            console.log(obj);
             global[obj.emitterName][obj.functionName](...obj.args).then(function (...args) {
                 //console.log('--', obj);
                 remoteEmit(obj.emitterName, obj.returnEventName, ...args);
@@ -74,19 +76,16 @@ function webSocketConnect(resolve, reject) {
     ws.on('close', function clear() {
         wscEmitter.connected = false;
         clearTimeout(this.pingTimeout);
-         console.log('onclose - lost connection to home');
+        console.log('onclose - lost connection to home');
         wscEmitter.emit('close');
-
-        if (hasConnected){
+        if (hasConnected) {
             reconnect();
         }
-
     });
     ws.on('error', function (err) {
         if (reject) {
             reject(err);
         }
-
         this.close();
         //console.log(err)
     });
@@ -94,10 +93,9 @@ function webSocketConnect(resolve, reject) {
 
     function reconnect() {
         setTimeout(function () {
-            if (wscEmitter.connected == false){
+            if (wscEmitter.connected == false) {
                 webSocketConnect();
             }
-
         }, 5000);
     }
 }
@@ -125,13 +123,13 @@ module.exports.sendObjectDefinitionDataToRemote = function (emitterName, emitter
     let emitterDefinition = {
         emitterDefinition: true,
         emitterName: emitterName,
-        emitterId: localSettings.ServiceInfo.id, 
+        emitterId: localSettings.ServiceInfo.id,
         asyncFunctions: [],
     };
     for (var prop in emitter) {
         if (emitter.hasOwnProperty(prop) && !prop.startsWith('_')) {
             if (typeof emitter[prop] === 'function' && emitter[prop].constructor.name === 'AsyncFunction') {
-             //   console.log(emitter[prop].constructor.name);
+                //   console.log(emitter[prop].constructor.name);
                 console.log('asyncFunction Prop:', prop);
                 emitterDefinition.asyncFunctions.push(prop);
             }
