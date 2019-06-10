@@ -171,7 +171,7 @@ module.exports.startWebSocketServer = function (server) {
             }
             if (ws.id && webSocket[ws.id]) {
                 delete webSocket[ws.id];
-                console.log('Removeing websocket from active object', ws.id);
+           //     console.log('Removeing websocket from active object', ws.id);
             } else {
                 console.log('WARNING: websocket closing and is not found as connected', ws.id);
             }
@@ -264,7 +264,7 @@ function subscribeEvents(ws) {
                 ws.send(JSON.stringify(emitterDefinition));
             }
 // *****
-            console.log('Bound Websocket ' + ws.id + ' to event ' + ws.subscribeEvents[i][subscribeObject] + ' in object:' + subscribeObject);
+          //  console.log('Bound Websocket ' + ws.id + ' to event ' + ws.subscribeEvents[i][subscribeObject] + ' in object:' + subscribeObject);
         } else {
             if (ws.subscribeEvents[i].function) {
                 //       console.log('Already Bound Websocket ' + ws.id + ' to event ' + ws.subscribeEvents[i][subscribeObject] + ' in object:' + subscribeObject)
@@ -283,7 +283,7 @@ function unsubscribeEvents(ws) {
             let subscribeObject = Object.getOwnPropertyNames(ws.subscribeEvents[i])[0]; // parse the property name
             // unbind will fail is the object is not an emiter or the object was not bound
             if ((typeof global[subscribeObject] == 'object' || typeof global[subscribeObject] == 'function') && typeof (ws.subscribeEvents[i].function) == 'function') {
-                console.log('UN-Bound Websocket ' + ws.id + ' from ' + subscribeObject + ' - ' + ws.subscribeEvents[i][subscribeObject]);
+         //       console.log('UN-Bound Websocket ' + ws.id + ' from ' + subscribeObject + ' - ' + ws.subscribeEvents[i][subscribeObject]);
                 global[subscribeObject].removeListener(ws.subscribeEvents[i][subscribeObject], ws.subscribeEvents[i].function);
             } else {
                 //   console.log('UN-Bound fail - not an emiter Websocket ' + ws.id + ' to event ' + ws.subscribeEvents[i][subscribeObject] + ' in object:' + subscribeObject)

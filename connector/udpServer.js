@@ -28,7 +28,7 @@ udpSocket.on('message', (msg, rinfo) => {
                         localSettings.home = msg.home;
                         localSettings.name = msg.name;
                         localSettings.description = msg.description;
-                        require('fs').writeFileSync('localSettings.JSON', JSON.stringify(localSettings));
+                        require('fs').writeFileSync(global.settingsFile, JSON.stringify(localSettings));
                         process.exit(100);
                     }
                     break;
@@ -38,7 +38,7 @@ udpSocket.on('message', (msg, rinfo) => {
                         localSettings.home = null;
                         localSettings.description = 'Available';
                         localSettings.name = 'Not Bonded';
-                        require('fs').writeFileSync('localSettings.JSON', JSON.stringify(localSettings));
+                        require('fs').writeFileSync(global.settingsFile, JSON.stringify(localSettings));
                         process.exit(100);
                     }
                     break;

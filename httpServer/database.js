@@ -44,7 +44,7 @@ database.getRequestLogDistinct = async function (fields = '', filter = {}) {
 database.getSettings = async function (type = 'system') {
     try {
         let rslt = await dbo.collection('settings').find({type: type}).project({_id: 0, type: 0}).toArray();
-        console.log(rslt[0], rslt, type);
+   //     console.log(rslt[0], rslt, type);
         return (rslt[0] || {});
     } catch (e) {
         console.log(e);
@@ -68,7 +68,7 @@ database.updateEventLog = async function (data) {
     }
 };
 database.getEventLog = async function (filter = {}) {
-    console.log(filter);
+   // console.log(filter);
     try {
         let rslt = await dbo.collection('eventLog').find(filter).project({_id: 0}).toArray();
         return rslt;

@@ -51,7 +51,7 @@ function webSocketConnect(resolve, reject) {
         if (resolve) {
             resolve();
         }
-        console.log('connected to home');
+        console.log('---connected to home---');
         wscEmitter.emit('connect');
     });
     ws.on('ping', heartbeat);
@@ -131,7 +131,7 @@ module.exports.sendObjectDefinitionDataToRemote = function (emitterName, emitter
     for (var prop in emitter) {
         if (emitter.hasOwnProperty(prop) && !prop.startsWith('_')) {
             if (typeof emitter[prop] === 'function' && emitter[prop].constructor.name === 'AsyncFunction') {
-                console.log(emitter[prop].constructor.name);
+             //   console.log(emitter[prop].constructor.name);
                 console.log('asyncFunction Prop:', prop);
                 emitterDefinition.asyncFunctions.push(prop);
             }
