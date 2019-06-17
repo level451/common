@@ -77,6 +77,12 @@ module.exports.startWebSocketServer = function (server) {
                 if (global[obj.emitter] instanceof require("events").EventEmitter) {
                     // it's an emitter - emit the message
                     //global[obj.emitter].emit(obj.eventName, ...obj.args);
+                    if (typeof(obj.args[0]) == 'object' && obj.args[0] != null )
+                    {
+                        console.log('dddd',typeof(obj.args[0]),obj.args[0])
+
+                        obj.args[0].timeStamp = new Date();
+                    }
                     global[obj.emitter].emit(obj.eventName, ...obj.args);
                 } else {
                     global[obj.emitter] = new EventEmitter();
@@ -220,7 +226,7 @@ function subscribeEvents(ws) {
     for (var i = 0; i < ws.subscribeEvents.length; ++i) {
         let subscribeObject = Object.getOwnPropertyNames(ws.subscribeEvents[i])[0]; // parse the name of the event to subscribe to
         // check to see is the object we are tring to subscribe to is an eventEmitter && we are not already subscribed
-        console.log('type', subscribeObject, typeof global[subscribeObject]);
+        //console.log('type', subscribeObject, typeof global[subscribeObject]);
         //global[subscribeObject] instanceof require("events").EventEmitter
         if ((typeof global[subscribeObject] == 'object' || typeof global[subscribeObject] == 'function') && typeof (ws.subscribeEvents[i].function) != 'function') {
             // wow this took forever to learn the syntax
