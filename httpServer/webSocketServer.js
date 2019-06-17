@@ -15,7 +15,7 @@ module.exports.startWebSocketServer = function (server) {
         //
         // RIO CHECK
         if (ws.systemType == 'RIO' && !settings.connectedRios[ws.id]) {
-            console.log(`Disconnected RIO &{ws.id} tried to connect - sending disconnect command via udp`);
+            console.log(`Rio not in connectedRios  ${ws.id} tried to connect - sending disconnect command via udp`);
             if (udpServer) {
                 udpServer.unbindHome(ws.id);
                 ws.close();
@@ -31,15 +31,13 @@ module.exports.startWebSocketServer = function (server) {
         ws.remoteAddress = ws._socket.remoteAddress;
         ws.connectTime = new Date();
         // in case of duplicate ids
-        if (ws.systemType == 'RIO'){
-            global.settings.connectedRios[ws.id].connected = true
-            database.updateSettings('system',global.settings)
+        if (ws.systemType == 'RIO') {
+            global.settings.connectedRios[ws.id].connected = true;
+            database.updateSettings('system', global.settings);
         }
-
         if (webSocket[ws.id]) {
             ws.id += '.' + Math.random().toString();
         }
-
         console.log('New WebSocket Connection ID:' + ws.id + ' systemType:' + ws.systemType + ' Total Connections:' + wss.clients.size);
         webSocket[ws.id] = ws;
         if (ws.systemType == 'browser') {
@@ -63,14 +61,14 @@ module.exports.startWebSocketServer = function (server) {
             if (obj.emitterDefinition) {
                 createGlobalEmitterObject(obj, ws);
                 //test lines below
-                if (typeof ted == 'object') {
-                    ted.asyncTest('ted1', 'call ted test (parm0)', 'parm1', 2).then(function (s) {
-                        console.log('--------------', s);
-                    });
-                    ted.getMembers().then(function (s) {
-                        console.log('get members', s);
-                    });
-                }
+                // if (typeof ted == 'object') {
+                //     ted.asyncTest('ted1', 'call ted test (parm0)', 'parm1', 2).then(function (s) {
+                //         console.log('--------------', s);
+                //     });
+                //     ted.getMembers().then(function (s) {
+                //         console.log('get members', s);
+                //     });
+                // }
                 // ted.asyncTest('call ted test function','val2',3).then(function (s) {
                 //     console.log('--------------',s)
                 // })
@@ -166,12 +164,11 @@ module.exports.startWebSocketServer = function (server) {
         });
         ws.on('pong', heartbeat);
         ws.on('close', function () {
-
-            if (ws.systemType == 'RIO' && global.settings.connectedRios[ws.id]){
-                global.settings.connectedRios[ws.id].connected = false
-                database.updateSettings('system',global.settings)
+            if (ws.systemType == 'RIO' && global.settings.connectedRios[ws.id]) {
+                //console.log(global.settings,ws.id)
+                global.settings.connectedRios[ws.id].connected = false;
+                database.updateSettings('system', global.settings);
             }
-
             // remove all eventlisteners we subscribed to for BROWSERS
             // if this.subscribeEvents exists this websock is a browser this is subscribed to some remove emiter events
             if (this.subscribeEvents) {
@@ -183,7 +180,7 @@ module.exports.startWebSocketServer = function (server) {
             }
             if (ws.id && webSocket[ws.id]) {
                 delete webSocket[ws.id];
-           //     console.log('Removeing websocket from active object', ws.id);
+                //     console.log('Removeing websocket from active object', ws.id);
             } else {
                 console.log('WARNING: websocket closing and is not found as connected', ws.id);
             }
@@ -276,7 +273,7 @@ function subscribeEvents(ws) {
                 ws.send(JSON.stringify(emitterDefinition));
             }
 // *****
-          //  console.log('Bound Websocket ' + ws.id + ' to event ' + ws.subscribeEvents[i][subscribeObject] + ' in object:' + subscribeObject);
+            //  console.log('Bound Websocket ' + ws.id + ' to event ' + ws.subscribeEvents[i][subscribeObject] + ' in object:' + subscribeObject);
         } else {
             if (ws.subscribeEvents[i].function) {
                 //       console.log('Already Bound Websocket ' + ws.id + ' to event ' + ws.subscribeEvents[i][subscribeObject] + ' in object:' + subscribeObject)
@@ -295,7 +292,7 @@ function unsubscribeEvents(ws) {
             let subscribeObject = Object.getOwnPropertyNames(ws.subscribeEvents[i])[0]; // parse the property name
             // unbind will fail is the object is not an emiter or the object was not bound
             if ((typeof global[subscribeObject] == 'object' || typeof global[subscribeObject] == 'function') && typeof (ws.subscribeEvents[i].function) == 'function') {
-         //       console.log('UN-Bound Websocket ' + ws.id + ' from ' + subscribeObject + ' - ' + ws.subscribeEvents[i][subscribeObject]);
+                //       console.log('UN-Bound Websocket ' + ws.id + ' from ' + subscribeObject + ' - ' + ws.subscribeEvents[i][subscribeObject]);
                 global[subscribeObject].removeListener(ws.subscribeEvents[i][subscribeObject], ws.subscribeEvents[i].function);
             } else {
                 //   console.log('UN-Bound fail - not an emiter Websocket ' + ws.id + ' to event ' + ws.subscribeEvents[i][subscribeObject] + ' in object:' + subscribeObject)
@@ -329,6 +326,8 @@ function deleteRemoteEmitter(ws) {
             console.log(`Removing ${ws.globalEmitterObjectId} from Global Emitter Object ${ws.globalEmitterObjectName}`);
             // more members remain only delete this member
             delete global[ws.globalEmitterObjectName].ws[ws.globalEmitterObjectId];
+            // add to the disconnected list
+            global[ws.globalEmitterObjectName].discconnectedMembers.push(ws.globalEmitterObjectId);
             let index = global[ws.globalEmitterObjectName].members.indexOf(ws.globalEmitterObjectId);
             if (index > -1) {
                 global[ws.globalEmitterObjectName].members.splice(index, 1);
@@ -341,10 +340,12 @@ function deleteRemoteEmitter(ws) {
 function createGlobalEmitterObject(d, ws) {
     ws.globalEmitterObjectName = d.emitterName;
     ws.globalEmitterObjectId = d.emitterId;
+    // first global emiter of this type
     if (!global[d.emitterName]) {
         console.log(`Creating Global Emitter ${d.emitterName} Id:${d.emitterId}`);
         global[d.emitterName] = new EventEmitter();
         global[d.emitterName].members = [d.emitterId];
+        global[d.emitterName].discconnectedMembers = [];
         global[d.emitterName].ws = {};
         global[d.emitterName].ws[d.emitterId] = ws; // attach the webSocket from the remote object to the new object
         createGlobalEmitterObjectAsncyFunctions(d);
@@ -361,7 +362,25 @@ function createGlobalEmitterObject(d, ws) {
         // if not a new emiter - add this on to the members
         global[d.emitterName].members.push(d.emitterId);
         global[d.emitterName].ws[d.emitterId] = ws; // attach the webSocket from the remote object to the object
+
+        createGlobalEmitterObjectAsncyFunctions(d);
+        for (var each in webSocket) {
+            if (webSocket[each].subscribeEvents) {
+                // just try to resub everyone
+                subscribeEvents(webSocket[each]);
+            }
+        }
+        // if it was discconnected remove it from the disconnected list
+
+        let index = global[d.emitterName].discconnectedMembers.indexOf(d.emitterId);
+        if (index > -1) {
+            global[d.emitterName].discconnectedMembers.splice(index, 1);
+        }
     }
+
+
+
+
 }
 
 
@@ -383,7 +402,12 @@ function createGlobalEmitterObjectAsncyFunctions(d) {
                 member = args[0];
                 args.shift();
             } else {
-                member = this.members[0];
+                // make sure it isn't a disconnected id
+                if (this.discconnectedMembers.includes(args[0])) {
+                console.log('--- Attempting remote function to disconnected unit:',args[0])
+                } else {
+                    member = this.members[0];
+                }
             }
             var returnEventName = Math.random().toString();
             //send the command to the remote

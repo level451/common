@@ -67,10 +67,16 @@ function webSocketConnect(resolve, reject) {
         if (obj.remoteAsyncFunction) {
             // call to an Asyncfunction from the remote
             console.log(obj);
-            global[obj.emitterName][obj.functionName](...obj.args).then(function (...args) {
-                //console.log('--', obj);
-                remoteEmit(obj.emitterName, obj.returnEventName, ...args);
-            });
+           if ( global[obj.emitterName][obj.functionName]){
+               global[obj.emitterName][obj.functionName](...obj.args).then(function (...args) {
+                   //console.log('--', obj);
+                   remoteEmit(obj.emitterName, obj.returnEventName, ...args);
+               });
+
+           } else
+           {
+               console.log('not a function')
+           }
         }
     });
     ws.on('close', function clear() {
@@ -128,6 +134,7 @@ module.exports.sendObjectDefinitionDataToRemote = function (emitterName, emitter
     };
     for (var prop in emitter) {
         if (emitter.hasOwnProperty(prop) && !prop.startsWith('_')) {
+           console.log(typeof emitter[prop],emitter[prop].constructor.name)
             if (typeof emitter[prop] === 'function' && emitter[prop].constructor.name === 'AsyncFunction') {
                 //   console.log(emitter[prop].constructor.name);
                 console.log('asyncFunction Prop:', prop);
