@@ -134,7 +134,7 @@ module.exports.sendObjectDefinitionDataToRemote = function (emitterName, emitter
     };
     for (var prop in emitter) {
         if (emitter.hasOwnProperty(prop) && !prop.startsWith('_')) {
-           console.log(typeof emitter[prop],emitter[prop].constructor.name)
+
             if (typeof emitter[prop] === 'function' && emitter[prop].constructor.name === 'AsyncFunction') {
                 //   console.log(emitter[prop].constructor.name);
                 console.log('asyncFunction Prop:', prop);
