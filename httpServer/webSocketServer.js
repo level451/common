@@ -42,9 +42,11 @@ module.exports.startWebSocketServer = function (server) {
         webSocket[ws.id] = ws;
         if (ws.systemType == 'browser') {
             webSocketEmitter.emit('browserConnect', ws.id);
+            console.log('Browser Connected - systemType', ws.systemType,ws.id);
+
         } else {
             webSocketEmitter.emit('connect', {id: ws.id, systemType: ws.systemType});
-            console.log('systemType', ws.systemType);
+            console.log('Rio Connected - systemType', ws.systemType,ws.id);
         }
         ws.on('message', function incoming(message) {
             //console.log(message)
@@ -66,7 +68,7 @@ module.exports.startWebSocketServer = function (server) {
             if (obj.emitterDefinition) {
                 // emitterDefinition now includes localsettings
                 if (obj.localSettings && global.settings.connectedRios[ws.id]) {
-                    console.log(ws.id)
+                    console.log('Emitter Definition from',ws.id)
                     global.settings.connectedRios[ws.id].localSettings = obj.localSettings;
                     database.updateSettings('system', global.settings);
                 }
@@ -357,7 +359,7 @@ function createGlobalEmitterObject(d, ws) {
     ws.globalEmitterObjectId = d.emitterId;
     // first global emiter of this type
     if (!global[d.emitterName]) {
-        console.log(`Creating Global Emitter ${d.emitterName} Id:${d.emitterId}`);
+        //console.log(`Creating Global Emitter ${d.emitterName} Id:${d.emitterId}`);
         global[d.emitterName] = new EventEmitter();
         global[d.emitterName].members = [d.emitterId];
         global[d.emitterName].discconnectedMembers = [];
@@ -373,7 +375,7 @@ function createGlobalEmitterObject(d, ws) {
         }
         webSocketEmitter.emit('newGlobalEmitterObject', d.emitterName);
     } else {
-        console.log(`Adding Emitter ${d.emitterId} to Global emitter ${d.emitterName}`);
+        //console.log(`Adding Emitter ${d.emitterId} to Global emitter ${d.emitterName}`);
         // if not a new emiter - add this on to the members
         global[d.emitterName].members.push(d.emitterId);
         global[d.emitterName].ws[d.emitterId] = ws; // attach the webSocket from the remote object to the object

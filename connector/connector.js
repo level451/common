@@ -2,6 +2,7 @@ const WebSocket = require('ws');
 const EventEmitter = require('events');
 const wscEmitter = new EventEmitter();
 const udpServer = require('./udpServer');
+global.connectionPending = false;
 wscEmitter.connected = false;
 wscEmitter.id = '';
 /*
@@ -39,6 +40,10 @@ function webSocketConnect(resolve, reject) {
         console.log('Already connected');
         return false;
     }
+    if (global.connectionPending) {
+        console.log('connection pending');
+        return false;
+    }
     if (!localSettings || !localSettings.home.address) {
         console.log("Can't connect to MasterConsole - address not in localsettings");
         return;
@@ -46,9 +51,11 @@ function webSocketConnect(resolve, reject) {
     let wsConnectionPrefix = (connectionParameters.useSecureWebsocket) ? 'wss' : 'ws';
     ws = new WebSocket(wsConnectionPrefix + '://' + connectionParameters.remoteAddress + '?id=' +
         connectionParameters.id + '&systemType=' + connectionParameters.systemType);
+    global.connectionPending = true;
     //ws = new WebSocket('wss://' + localSettings.home.address + '?id=e1:e1:e1:e1&type=homeSolar');
     ws.on('open', heartbeat);
     ws.on('open', function () {
+        global.connectionPending = false;
         wscEmitter.connected = true;
         hasConnected = true;
         if (resolve) {
@@ -78,6 +85,7 @@ function webSocketConnect(resolve, reject) {
         }
     });
     ws.on('close', function clear() {
+        global.connectionPending = false;
         wscEmitter.connected = false;
         clearTimeout(this.pingTimeout);
         console.log('onclose - lost connection to home');
@@ -87,6 +95,7 @@ function webSocketConnect(resolve, reject) {
         }
     });
     ws.on('error', function (err) {
+        global.connectionPending = false;
         if (reject) {
             reject(err);
         }
@@ -98,7 +107,9 @@ function webSocketConnect(resolve, reject) {
     function reconnect() {
         setTimeout(function () {
             if (wscEmitter.connected == false) {
-                webSocketConnect();
+                if (!global.connectionPending) {
+                    webSocketConnect();
+                }
             }
         }, 5000);
     }
@@ -114,7 +125,6 @@ function heartbeat() {
         this.terminate();
         console.log('terminated connection');
     }, 30000 + 1000);
-
 }
 
 
@@ -135,8 +145,6 @@ module.exports.sendObjectDefinitionDataToRemote = function (emitterName, emitter
     for (var prop in emitter) {
         if (emitter.hasOwnProperty(prop) && !prop.startsWith('_')) {
             if (typeof emitter[prop] === 'function' && emitter[prop].constructor.name === 'AsyncFunction') {
-                //   console.log(emitter[prop].constructor.name);
-                console.log('asyncFunction Prop:', prop);
                 emitterDefinition.asyncFunctions.push(prop);
             }
         }
