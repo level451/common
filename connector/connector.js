@@ -36,8 +36,8 @@ wscEmitter.connect = function (remoteAddress, useSecureWebsocket, systemType, id
 
 function webSocketConnect(resolve, reject) {
     if (wscEmitter.connected == true) {
-        console.log('Already connected')
-        return false
+        console.log('Already connected');
+        return false;
     }
     if (!localSettings || !localSettings.home.address) {
         console.log("Can't connect to MasterConsole - address not in localsettings");
@@ -67,16 +67,14 @@ function webSocketConnect(resolve, reject) {
         if (obj.remoteAsyncFunction) {
             // call to an Asyncfunction from the remote
             console.log(obj);
-           if ( global[obj.emitterName][obj.functionName]){
-               global[obj.emitterName][obj.functionName](...obj.args).then(function (...args) {
-                   //console.log('--', obj);
-                   remoteEmit(obj.emitterName, obj.returnEventName, ...args);
-               });
-
-           } else
-           {
-               console.log('not a function')
-           }
+            if (global[obj.emitterName][obj.functionName]) {
+                global[obj.emitterName][obj.functionName](...obj.args).then(function (...args) {
+                    //console.log('--', obj);
+                    remoteEmit(obj.emitterName, obj.returnEventName, ...args);
+                });
+            } else {
+                console.log('not a function');
+            }
         }
     });
     ws.on('close', function clear() {
@@ -131,11 +129,10 @@ module.exports.sendObjectDefinitionDataToRemote = function (emitterName, emitter
         emitterName: emitterName,
         emitterId: localSettings.ServiceInfo.id,
         asyncFunctions: [],
-        localSettings:localSettings
+        localSettings: localSettings
     };
     for (var prop in emitter) {
         if (emitter.hasOwnProperty(prop) && !prop.startsWith('_')) {
-
             if (typeof emitter[prop] === 'function' && emitter[prop].constructor.name === 'AsyncFunction') {
                 //   console.log(emitter[prop].constructor.name);
                 console.log('asyncFunction Prop:', prop);
@@ -146,10 +143,10 @@ module.exports.sendObjectDefinitionDataToRemote = function (emitterName, emitter
     send(emitterDefinition);
 };
 module.exports.updateLocalSettings = function () {
-    console.log('sendLocalsettingsupdate')
+    console.log('sendLocalsettingsupdate');
     let update = {
         updateLocalSettings: true,
-        localSettings:localSettings
+        localSettings: localSettings
     };
     send(update);
 };
