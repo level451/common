@@ -114,6 +114,7 @@ function heartbeat() {
         this.terminate();
         console.log('terminated connection');
     }, 30000 + 1000);
+
 }
 
 
