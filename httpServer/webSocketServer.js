@@ -58,7 +58,18 @@ module.exports.startWebSocketServer = function (server) {
                 ws.subscribeEvents = obj.eventsToSubscribeTo;
                 subscribeEvents(ws);
             }
+            if (obj.updateLocalSettings) {
+                console.log('localsettingsupdate')
+                global.settings.connectedRios[ws.id].localSettings = obj.localSettings;
+                database.updateSettings('system', global.settings);
+            }
             if (obj.emitterDefinition) {
+                // emitterDefinition now includes localsettings
+                if (obj.localSettings && global.settings.connectedRios[ws.id]) {
+                    console.log(ws.id)
+                    global.settings.connectedRios[ws.id].localSettings = obj.localSettings;
+                    database.updateSettings('system', global.settings);
+                }
                 createGlobalEmitterObject(obj, ws);
                 //test lines below
                 // if (typeof ted == 'object') {
@@ -77,10 +88,8 @@ module.exports.startWebSocketServer = function (server) {
                 if (global[obj.emitter] instanceof require("events").EventEmitter) {
                     // it's an emitter - emit the message
                     //global[obj.emitter].emit(obj.eventName, ...obj.args);
-                    if (typeof(obj.args[0]) == 'object' && obj.args[0] != null )
-                    {
-                        console.log('dddd',typeof(obj.args[0]),obj.args[0])
-
+                    if (typeof (obj.args[0]) == 'object' && obj.args[0] != null) {
+                        console.log('dddd', typeof (obj.args[0]), obj.args[0]);
                         obj.args[0].timeStamp = new Date();
                     }
                     global[obj.emitter].emit(obj.eventName, ...obj.args);
@@ -368,7 +377,6 @@ function createGlobalEmitterObject(d, ws) {
         // if not a new emiter - add this on to the members
         global[d.emitterName].members.push(d.emitterId);
         global[d.emitterName].ws[d.emitterId] = ws; // attach the webSocket from the remote object to the object
-
         createGlobalEmitterObjectAsncyFunctions(d);
         for (var each in webSocket) {
             if (webSocket[each].subscribeEvents) {
@@ -377,16 +385,11 @@ function createGlobalEmitterObject(d, ws) {
             }
         }
         // if it was discconnected remove it from the disconnected list
-
         let index = global[d.emitterName].discconnectedMembers.indexOf(d.emitterId);
         if (index > -1) {
             global[d.emitterName].discconnectedMembers.splice(index, 1);
         }
     }
-
-
-
-
 }
 
 
@@ -410,7 +413,7 @@ function createGlobalEmitterObjectAsncyFunctions(d) {
             } else {
                 // make sure it isn't a disconnected id
                 if (this.discconnectedMembers.includes(args[0])) {
-                console.log('--- Attempting remote function to disconnected unit:',args[0])
+                    console.log('--- Attempting remote function to disconnected unit:', args[0]);
                 } else {
                     member = this.members[0];
                 }

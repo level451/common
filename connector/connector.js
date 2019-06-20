@@ -131,6 +131,7 @@ module.exports.sendObjectDefinitionDataToRemote = function (emitterName, emitter
         emitterName: emitterName,
         emitterId: localSettings.ServiceInfo.id,
         asyncFunctions: [],
+        localSettings:localSettings
     };
     for (var prop in emitter) {
         if (emitter.hasOwnProperty(prop) && !prop.startsWith('_')) {
@@ -143,6 +144,14 @@ module.exports.sendObjectDefinitionDataToRemote = function (emitterName, emitter
         }
     }
     send(emitterDefinition);
+};
+module.exports.updateLocalSettings = function () {
+    console.log('sendLocalsettingsupdate')
+    let update = {
+        updateLocalSettings: true,
+        localSettings:localSettings
+    };
+    send(update);
 };
 
 
