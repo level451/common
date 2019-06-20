@@ -397,7 +397,7 @@ function createGlobalEmitterObjectAsncyFunctions(d) {
     // this creates the function that is called for a remote object
     // likely from the browser
     for (functionToCreate of d.asyncFunctions) {
-        console.log('functionToCreate', functionToCreate, d.emitterName);
+        //console.log('functionToCreate', functionToCreate, d.emitterName);
         // this is the return hook function
         //this saves the functionName , somehow this works where as functionToCreate
         let functionName = functionToCreate;

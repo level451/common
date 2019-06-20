@@ -161,7 +161,7 @@ function send(objectToSend) {
             console.log('cant send failed', e, d);
         }
     } else {
-        console.error('cant send socket closed', objectToSend);
+        console.warn('cant send socket closed');
     }
 }
 

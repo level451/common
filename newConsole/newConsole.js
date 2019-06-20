@@ -16,97 +16,81 @@ util = require("util");
 //     blue  = '34m',
 //     reset = '\033[0m';
 //
-const oldconsole = console
-process.stdout.write('NewConsole Active!'+'\n')
+const oldconsole = console;
+process.stdout.write('NewConsole Active!' + '\n');
 module.exports = {
-
-    log: function() {
-        Error.stackTraceLimit = 2
-        let stackInfo =   Error().stack.split('\n')
-        Error.stackTraceLimit = 10
-        let fileNameStart = stackInfo[2].lastIndexOf('\\')+1
-        let fileNameEnd = stackInfo[2].indexOf(':',fileNameStart)
-        let fileName = stackInfo[2].substring(fileNameStart,fileNameEnd)+':'+
-            stackInfo[2].substring(fileNameEnd+1,stackInfo[2].lastIndexOf(':'));
-
+    log: function () {
+        Error.stackTraceLimit = 2;
+        let stackInfo = Error().stack.split('\n');
+        Error.stackTraceLimit = 10;
+        let fileNameStart = stackInfo[2].lastIndexOf('\\') + 1;
+        let fileNameEnd = stackInfo[2].indexOf(':', fileNameStart);
+        let fileName = stackInfo[2].substring(fileNameStart, fileNameEnd) + ':' +
+            stackInfo[2].substring(fileNameEnd + 1, stackInfo[2].lastIndexOf(':'));
         //console.log.apply(console,arguments)
-        let string = util.format( util.format.apply(this, arguments));
-        if (string.length > 100 || string.includes('\n')){
-            process.stdout.write(''.padEnd(100)+Date().toString().substr(16,9)+
-                colourise(34,fileName.padEnd(20))+'\n' )
-
-            process.stdout.write(string+'\n')
-        } else
-        {
-
-            process.stdout.write(string.padEnd(100)+Date().toString().substr(16,9)+
-                colourise(34,fileName.padEnd(20))+'\n')
-
+        let string = util.format(util.format.apply(this, arguments));
+        if (string.length > 100 || string.includes('\n')) {
+            process.stdout.write(''.padEnd(100) + Date().toString().substr(16, 9) +
+                colourise(34, fileName.padEnd(20)) + '\n');
+            process.stdout.write(string + '\n');
+        } else {
+            process.stdout.write(string.padEnd(100) + Date().toString().substr(16, 9) +
+                colourise(34, fileName.padEnd(20)) + '\n');
         }
         // process.stdout.write(arguments[0] + '-'+module.filename+"\n");
-        return
+        return;
     },
-
-    info: function() {
-        oldconsole.info(util.format( util.format.apply(this, arguments)))
-
+    info: function () {
+        oldconsole.info(util.format(util.format.apply(this, arguments)));
     },
-
-    trace:function() {
-        oldconsole.log("------TRACE--------")
-
-        oldconsole.info(util.format( util.format.apply(this, arguments)))
-
+    warn: function () {
+        oldconsole.warn(util.format(util.format.apply(this, arguments)));
     },
-
-    error: function() {
-
-
-        oldconsole.log("------ERROR--------")
-
-        Error.stackTraceLimit = 2
-        let stackInfo =   Error().stack.split('\n')
-        Error.stackTraceLimit = 10
-        let fileNameStart = stackInfo[2].lastIndexOf('\\')+1
-        let fileNameEnd = stackInfo[2].indexOf(':',fileNameStart)
-        let fileName = stackInfo[2].substring(fileNameStart,fileNameEnd)+':'+
-            stackInfo[2].substring(fileNameEnd+1,stackInfo[2].lastIndexOf(':'));
-
+    trace: function () {
+        oldconsole.log("------TRACE--------");
+        oldconsole.info(util.format(util.format.apply(this, arguments)));
+    },
+    error: function () {
+        oldconsole.log("------ERROR--------");
+        Error.stackTraceLimit = 2;
+        let stackInfo = Error().stack.split('\n');
+        Error.stackTraceLimit = 10;
+        let fileNameStart = stackInfo[2].lastIndexOf('\\') + 1;
+        let fileNameEnd = stackInfo[2].indexOf(':', fileNameStart);
+        let fileName = stackInfo[2].substring(fileNameStart, fileNameEnd) + ':' +
+            stackInfo[2].substring(fileNameEnd + 1, stackInfo[2].lastIndexOf(':'));
         //console.log.apply(console,arguments)
-        let string = util.format( util.format.apply(this, arguments));
-        if (string.length > 100 || string.includes('\n')){
-            process.stdout.write(''.padEnd(100)+Date().toString().substr(16,9)+
-                colourise(34,fileName.padEnd(20))+'\n' )
-
-            process.stdout.write(string+'\n')
-        } else
-        {
-
-            process.stdout.write(string.padEnd(100)+Date().toString().substr(16,9)+
-                colourise(34,fileName.padEnd(20))+'\n')
-
+        let string = util.format(util.format.apply(this, arguments));
+        if (string.length > 100 || string.includes('\n')) {
+            process.stdout.write(''.padEnd(100) + Date().toString().substr(16, 9) +
+                colourise(34, fileName.padEnd(20)) + '\n');
+            process.stdout.write(string + '\n');
+        } else {
+            process.stdout.write(string.padEnd(100) + Date().toString().substr(16, 9) +
+                colourise(34, fileName.padEnd(20)) + '\n');
         }
-        oldconsole.trace(util.format( util.format.apply(this, arguments)))
-
-        process.stdout.write('---------------'+'\n')
-
+        oldconsole.trace(util.format(util.format.apply(this, arguments)));
+        process.stdout.write('---------------' + '\n');
         // process.stdout.write(arguments[0] + '-'+module.filename+"\n");
-        return
+        return;
     }
+};
 
-}
 
 function getTrace(call) {
     return {
         file: call.getFileName(),
         lineno: call.getLineNumber(),
         timestamp: new Date().toUTCString()
-    }
+    };
 }
 
+
 function colourise(colourCode, string) {
-    return "\x1b[" + colourCode + "m"  + string + "\033[0m";
+    return "\x1b[" + colourCode + "m" + string + "\033[0m";
 }
+
+
 function MyError() {
     Error.captureStackTrace(this);
 }

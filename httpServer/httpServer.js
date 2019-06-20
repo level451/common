@@ -356,7 +356,7 @@ module.exports = function (startOptions = {}) {
                     });
                 } else {
                     req.sessionId = req.signedCookies.sid;
-                    console.log(req.sessionId);
+
                     dbo.collection('Session').findOneAndUpdate({_id: database.ObjectID(req.sessionId)},
                         {
                             $push: {
