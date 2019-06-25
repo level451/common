@@ -55,7 +55,7 @@ udpSocket.on('error', (e) => {
 });
 udpSocket.startUdpServer = function () {
     return new Promise(function (resolve, reject) {
-        udpSocket.bind(41235, () => {
+        udpSocket.bind(41235, '0.0.0.0',() => {
             try {
                 udpSocket.addMembership('224.0.0.49'); // dont care what interface right now
             } catch (e) {
