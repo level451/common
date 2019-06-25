@@ -2,6 +2,7 @@
     <% Object.keys(locals.javascript).forEach((o) => {
         if (locals.javascript[o]){
     %>
+   /* - added by varToJavascript.ejs */
     var <%= o %>=<%- JSON.stringify(locals.javascript[o]) %>
     <%}
     }) %>
