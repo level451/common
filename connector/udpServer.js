@@ -57,13 +57,16 @@ udpSocket.startUdpServer = function () {
     return new Promise(function (resolve, reject) {
         udpSocket.bind(41235, () => {
             try {
-                udpSocket.addMembership('224.0.0.49'); // dont care what interface right now
+                let ip = getIPv4NetworkInterfaces();
+                console.log(`${ip.length} Network Interfaces found`);
+                for (let i = 0; i < ip.length; ++i) {
+                    udpSocket.addMembership('224.0.0.49', ip[i].address); // dont care what interface right now
+                    console.log(`UDP Multicast Bound to 224.0.0.49 IFace:${ip[i].address}`);
+                }
             } catch (e) {
-                console.log('udpaddmembership failed:',e)
+                console.log('udpaddmembership failed:', e);
                 process.exit(100);
-
             }
-            console.log('UDP Multicast Bound to 224.0.0.49');
             resolve();
         });
     });
@@ -95,3 +98,28 @@ udpSocket.test = async function (...id) {
     return [...id];
 };
 module.exports = udpSocket;
+
+
+function getIPv4NetworkInterfaces() {
+//returns an array with all the non-loopback IPv4 networkds
+// includes:
+// name:(Interface Name)
+// mac:(MAC address of the nic)
+// address:(ipv4 address as string)
+    var networkInterfaces = Object.entries(require('os').networkInterfaces());
+    var IPv4Interfaces = [];
+    for (var i = 0; i < networkInterfaces.length; ++i) {
+        // this will iterate through each NIC
+        for (var j = 0; j < networkInterfaces[i][1].length; ++j) {
+            // this will iterate through each binding in each nic
+            if (networkInterfaces[i][1][j].internal == false && networkInterfaces[i][1][j].family == "IPv4") {
+                IPv4Interfaces.push({
+                    name: networkInterfaces[i][0],
+                    mac: networkInterfaces[i][1][j].mac,
+                    address: networkInterfaces[i][1][j].address
+                });
+            }
+        }
+    }
+    return (IPv4Interfaces);
+}
