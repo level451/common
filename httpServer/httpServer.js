@@ -42,7 +42,7 @@ module.exports = function (startOptions = {}) {
         } catch (e) {
 
         }
-
+//
         dbo.collection('Users').findOne({_id: uid}).then((o) => {
             dbo.collection('requestLog').insertOne({
                 userName: ((o && o.userName) ? o.userName : 'Unknown'),
