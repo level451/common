@@ -7,9 +7,7 @@ udpSocket.on('error', (err) => {
     udpSocket.close();
 });
 udpSocket.on('message', (msg, rinfo) => {
-    console.log('UDP message',msg.toString(),rinfo)
-
-    try {
+        try {
             msg = JSON.parse(msg);
         } catch (e) {
             console.log('Malformed UDP Message:', msg);
@@ -57,33 +55,35 @@ udpSocket.on('message', (msg, rinfo) => {
 udpSocket.on('error', (e) => {
     console.log('UDP Error:' + e);
 });
-udpSocket.startUdpServer = function (useSanet = false) {
+udpSocket.startUdpServer = function (usesaNet = false) {
     //updated
-    if (useSanet) {
-        let options = {port:41235}
-        if (process.platform != 'linux') {
-            options.address = '10.1.1.1'
-        }
+    if (usesaNet) {
+        let saNetIp=getIPv4NetworkInterfaces(localSettings.network.saNet)
+        if (saNetIp){
+            let options = {port: 41235};
+            console.log('saNet Address:',saNetIp)
 
-        Sanet = dgram.createSocket({type: 'udp4', reuseAddr: true});
-        console.log('Sanet created!');
-        Sanet.bind(options,  () => {
-            Sanet.addMembership('224.0.0.49', '10.1.1.1'); // dont care what interface right now
-            Sanet.on('message', (msg, rinfo) => {
-                console.log('SAnet message',msg.toString(),rinfo)
-                udpSocket.emit('message', msg, rinfo);
+            if (process.platform != 'linux') {
+                options.address = '10.1.1.1';
+            }
+            saNet = dgram.createSocket({type: 'udp4', reuseAddr: true});
+            console.log('saNet created!');
+            saNet.bind(options, () => {
+                saNet.addMembership('224.0.0.49', '10.1.1.1'); // dont care what interface right now
+                saNet.on('message', (msg, rinfo) => {
+                    udpSocket.emit('message', msg, rinfo);
+                });
             });
-        });
+
+        }
     }
     return new Promise(function (resolve, reject) {
         let ip = getIPv4NetworkInterfaces();
-        let options = {port:41235}
-        let udpAddress =  (useSanet) ? '10.6.1.2' : ip[0].address;
-
+        let options = {port: 41235};
+        let udpAddress = (usesaNet) ? '10.6.1.2' : ip[0].address;
         if (process.platform != 'linux') {
-            options.address = udpAddress
+            options.address = udpAddress;
         }
-
         udpSocket.bind(options, () => {
             try {
                 udpSocket.addMembership('224.0.0.49', udpAddress); // dont care what interface right now
@@ -99,7 +99,6 @@ udpSocket.startUdpServer = function (useSanet = false) {
 udpSocket.sendObject = function (data) { // convert to promise?
     udpSocket.send(JSON.stringify(data), 41235, '224.0.0.49');
     if (Sanet) {
-        console.log('here')
         Sanet.send(JSON.stringify(data), 41235, '224.0.0.49');
     }
 };
@@ -129,26 +128,30 @@ udpSocket.test = async function (...id) {
 module.exports = udpSocket;
 
 
-function getIPv4NetworkInterfaces() {
-//returns an array with all the non-loopback IPv4 networkds
-// includes:
-// name:(Interface Name)
-// mac:(MAC address of the nic)
-// address:(ipv4 address as string)
-    var networkInterfaces = Object.entries(require('os').networkInterfaces());
-    var IPv4Interfaces = [];
-    for (var i = 0; i < networkInterfaces.length; ++i) {
+function getIPv4NetworkInterfaces(mac = false) {
+    var networkInterfaces = Object.entries(require('os').networkInterfaces())
+    var IPv4Interfaces = []
+    for (var i=0;i < networkInterfaces.length;++i){
         // this will iterate through each NIC
-        for (var j = 0; j < networkInterfaces[i][1].length; ++j) {
+
+        for (var j=0; j < networkInterfaces[i][1].length;++j ){
             // this will iterate through each binding in each nic
-            if (networkInterfaces[i][1][j].internal == false && networkInterfaces[i][1][j].family == "IPv4") {
+            if (networkInterfaces[i][1][j].internal == false && networkInterfaces[i][1][j].family == "IPv4"){
+                if (mac == networkInterfaces[i][1][j].mac ){
+                    return networkInterfaces[i][1][j].address
+                }
                 IPv4Interfaces.push({
-                    name: networkInterfaces[i][0],
-                    mac: networkInterfaces[i][1][j].mac,
-                    address: networkInterfaces[i][1][j].address
-                });
+                    name:networkInterfaces[i][0],
+                    mac:networkInterfaces[i][1][j].mac,
+                    address:networkInterfaces[i][1][j].address})
             }
+
         }
     }
-    return (IPv4Interfaces);
+    if (mac){
+        return false
+    } else {
+        return (IPv4Interfaces)
+    }
+
 }
