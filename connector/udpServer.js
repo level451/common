@@ -55,16 +55,16 @@ udpSocket.on('error', (e) => {
 });
 udpSocket.startUdpServer = function () {
     return new Promise(function (resolve, reject) {
-        udpSocket.bind(41235,() => {
+        udpSocket.bind(41235,'10.1.1.1',() => {
             try {
 
                 let ip = getIPv4NetworkInterfaces();
                 console.log(`${ip.length} Network Interfaces found`);
-              //  udpSocket.addMembership('224.0.0.49'); // dont care what interface right now
+                udpSocket.addMembership('224.0.0.49','10.1.1.1'); // dont care what interface right now
 
                 for (let i = 0; i < ip.length; ++i) {
-                    udpSocket.addMembership('224.0.0.49', ip[i].address); // dont care what interface right now
-                    console.log(`UDP Multicast Bound to 224.0.0.49 IFace:${ip[i].address}`);
+                 //   udpSocket.addMembership('224.0.0.49', ip[i].address); // dont care what interface right now
+                   // console.log(`UDP Multicast Bound to 224.0.0.49 IFace:${ip[i].address}`);
                 }
             } catch (e) {
                 console.log('udpaddmembership failed:', e);
