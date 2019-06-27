@@ -84,6 +84,7 @@ udpSocket.startUdpServer = function (usesaNet = false) {
         if (process.platform != 'linux') {
             options.address = udpAddress;
         }
+        console.log('options',options)
         udpSocket.bind(options, () => {
             try {
                 udpSocket.addMembership('224.0.0.49', udpAddress); // dont care what interface right now
