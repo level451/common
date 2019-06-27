@@ -1,5 +1,5 @@
 const dgram = require('dgram');
-let Sanet = false;
+let saNet = false;
 // set up the udpsocket
 const udpSocket = dgram.createSocket({type: 'udp4', reuseAddr: true});
 udpSocket.on('error', (err) => {
@@ -64,23 +64,28 @@ udpSocket.startUdpServer = function (usesaNet = false) {
             console.log('saNet Address:',saNetIp)
 
             if (process.platform != 'linux') {
-                options.address = '10.1.1.1';
+                options.address = saNetIp;
             }
             saNet = dgram.createSocket({type: 'udp4', reuseAddr: true});
             console.log('saNet created!');
             saNet.bind(options, () => {
-                saNet.addMembership('224.0.0.49', '10.1.1.1'); // dont care what interface right now
+                saNet.addMembership('224.0.0.49', saNetIp); // dont care what interface right now
                 saNet.on('message', (msg, rinfo) => {
+     //           console.log('sanet',msg.toString(),rinfo)
                     udpSocket.emit('message', msg, rinfo);
                 });
             });
 
         }
+    else {
+        console.log('saNet Not Available')
+        }
     }
     return new Promise(function (resolve, reject) {
         let ip = getIPv4NetworkInterfaces();
         let options = {port: 41235};
-        let udpAddress = (usesaNet) ? '10.6.1.2' : ip[0].address;
+        // for cs6 the network.internet mac is used and required
+        let udpAddress = (usesaNet) ? getIPv4NetworkInterfaces(localSettings.network.internet) : ip[0].address;
         if (process.platform != 'linux') {
             options.address = udpAddress;
         }
@@ -88,10 +93,10 @@ udpSocket.startUdpServer = function (usesaNet = false) {
         udpSocket.bind(options, () => {
             try {
                 udpSocket.addMembership('224.0.0.49', udpAddress); // dont care what interface right now
-                console.log(`UDP Multicast Bound to 224.0.0.49 IFace:${udpAddress}`);
+                console.log(`(MAIN) UDP Multicast Bound to 224.0.0.49 IFace:${udpAddress}`);
             } catch (e) {
                 console.log('udpaddmembership failed:', e);
-                process.exit(100);
+                //process.exit(100);
             }
             resolve();
         });
@@ -99,8 +104,8 @@ udpSocket.startUdpServer = function (usesaNet = false) {
 };
 udpSocket.sendObject = function (data) { // convert to promise?
     udpSocket.send(JSON.stringify(data), 41235, '224.0.0.49');
-    if (Sanet) {
-        Sanet.send(JSON.stringify(data), 41235, '224.0.0.49');
+    if (saNet) {
+        saNet.send(JSON.stringify(data), 41235, '224.0.0.49');
     }
 };
 udpSocket.discover = async function (systemType = 'ALL') {
