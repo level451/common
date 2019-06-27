@@ -58,10 +58,16 @@ udpSocket.on('error', (e) => {
     console.log('UDP Error:' + e);
 });
 udpSocket.startUdpServer = function (useSanet = false) {
+    //updated
     if (useSanet) {
+        let options = {port:41235}
+        if (process.platform != 'linux') {
+            options.address = '10.1.1.1'
+        }
+
         Sanet = dgram.createSocket({type: 'udp4', reuseAddr: true});
         console.log('Sanet created!');
-        Sanet.bind(41235, '10.1.1.1', () => {
+        Sanet.bind(options,  () => {
             Sanet.addMembership('224.0.0.49', '10.1.1.1'); // dont care what interface right now
             Sanet.on('message', (msg, rinfo) => {
                 console.log('SAnet message',msg.toString(),rinfo)
@@ -71,8 +77,14 @@ udpSocket.startUdpServer = function (useSanet = false) {
     }
     return new Promise(function (resolve, reject) {
         let ip = getIPv4NetworkInterfaces();
-        let udpAddress = (useSanet) ? '10.6.1.2' : ip[0].address;
-        udpSocket.bind(41235, () => {
+        let options = {port:41235}
+        let udpAddress =  (useSanet) ? '10.6.1.2' : ip[0].address;
+
+        if (process.platform != 'linux') {
+            options.address = udpAddress
+        }
+
+        udpSocket.bind(options, () => {
             try {
                 udpSocket.addMembership('224.0.0.49', udpAddress); // dont care what interface right now
                 console.log(`UDP Multicast Bound to 224.0.0.49 IFace:${udpAddress}`);
