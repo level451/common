@@ -58,17 +58,17 @@ udpSocket.on('error', (e) => {
     console.log('UDP Error:' + e);
 });
 udpSocket.startUdpServer = function (useSanet = false) {
-    if (useSanet) {
-        Sanet = dgram.createSocket({type: 'udp4', reuseAddr: true});
-        console.log('Sanet created!');
-        Sanet.bind(41235, '10.1.1.1', () => {
-            Sanet.addMembership('224.0.0.49', '10.1.1.1'); // dont care what interface right now
-            Sanet.on('message', (msg, rinfo) => {
-                console.log('SAnet message',msg.toString(),rinfo)
-                udpSocket.emit('message', msg, rinfo);
-            });
-        });
-    }
+    // if (useSanet) {
+    //     Sanet = dgram.createSocket({type: 'udp4', reuseAddr: true});
+    //     console.log('Sanet created!');
+    //     Sanet.bind(41235, '10.1.1.1', () => {
+    //         Sanet.addMembership('224.0.0.49', '10.1.1.1'); // dont care what interface right now
+    //         Sanet.on('message', (msg, rinfo) => {
+    //             console.log('SAnet message',msg.toString(),rinfo)
+    //             udpSocket.emit('message', msg, rinfo);
+    //         });
+    //     });
+    // }
     return new Promise(function (resolve, reject) {
         let ip = getIPv4NetworkInterfaces();
         let udpAddress = (useSanet) ? '10.6.1.2' : ip[0].address;
