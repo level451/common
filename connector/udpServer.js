@@ -84,10 +84,11 @@ udpSocket.startUdpServer = function (useSanet = false) {
     //     });
     // });
     return new Promise(function (resolve, reject) {
-        let ip = getIPv4NetworkInterfaces();
+        let o = getIPv4NetworkInterfaces();
         useSanet = false
-        let udpAddress = (useSanet) ? '10.6.1.2' : ip[0].address;
-        udpSocket.bind({port:41235,address:ip[0].address}, () => {
+        let udpAddress = (useSanet) ? '10.6.1.2' : o[0].address;
+        udpSocket.bind({port:41235,address:o[0].address}, () => {
+            let ip = getIPv4NetworkInterfaces();
             try {
                 udpSocket.addMembership('224.0.0.49', ip[0].address); // dont care what interface right now
 
