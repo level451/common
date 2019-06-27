@@ -67,7 +67,7 @@ module.exports.startWebSocketServer = function (server) {
             }
             if (obj.emitterDefinition) {
                 // emitterDefinition now includes localsettings
-                if (obj.localSettings && global.settings.connectedRios[ws.id]) {
+                if (obj.localSettings && global.settings && global.settings.connectedRios[ws.id]) {
                     console.log('Emitter Definition from',ws.id)
                     global.settings.connectedRios[ws.id].localSettings = obj.localSettings;
                     database.updateSettings('system', global.settings);
