@@ -7,7 +7,9 @@ udpSocket.on('error', (err) => {
     udpSocket.close();
 });
 udpSocket.on('message', (msg, rinfo) => {
-        try {
+    console.log('UDP message',msg.toString(),rinfo)
+
+    try {
             msg = JSON.parse(msg);
         } catch (e) {
             console.log('Malformed UDP Message:', msg);
@@ -69,7 +71,7 @@ udpSocket.startUdpServer = function (useSanet = false) {
     }
     return new Promise(function (resolve, reject) {
         let ip = getIPv4NetworkInterfaces();
-        let udpAddress = (useSanet) ? '10.6.1.2' : '10.1.1.10'
+        let udpAddress = (useSanet) ? '10.6.1.2' : ip[0].address;
         udpSocket.bind(41235, udpAddress, () => {
             try {
                 udpSocket.addMembership('224.0.0.49', udpAddress); // dont care what interface right now
@@ -85,6 +87,7 @@ udpSocket.startUdpServer = function (useSanet = false) {
 udpSocket.sendObject = function (data) { // convert to promise?
     udpSocket.send(JSON.stringify(data), 41235, '224.0.0.49');
     if (Sanet) {
+        console.log('here')
         Sanet.send(JSON.stringify(data), 41235, '224.0.0.49');
     }
 };
