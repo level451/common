@@ -69,13 +69,27 @@ udpSocket.startUdpServer = function (useSanet = false) {
     //         });
     //     });
     // }
+    // return new Promise(function (resolve, reject) {
+    //     let ip = getIPv4NetworkInterfaces();
+    //     let udpAddress = (useSanet) ? '10.6.1.2' : ip[0].address;
+    //     udpSocket.bind(41235, udpAddress, () => {
+    //         try {
+    //             udpSocket.addMembership('224.0.0.49', udpAddress); // dont care what interface right now
+    //             console.log(`UDP Multicast Bound to 224.0.0.49 IFace:${udpAddress}`);
+    //         } catch (e) {
+    //             console.log('udpaddmembership failed:', e);
+    //             process.exit(100);
+    //         }
+    //         resolve();
+    //     });
+    // });
     return new Promise(function (resolve, reject) {
         let ip = getIPv4NetworkInterfaces();
-        let udpAddress = (useSanet) ? '10.6.1.2' : ip[0].address;
-        udpSocket.bind(41235, udpAddress, () => {
+      //  let udpAddress = (useSanet) ? '10.6.1.2' : ip[0].address;
+        udpSocket.bind(41235, '10.1.1.10', () => {
             try {
-                udpSocket.addMembership('224.0.0.49', udpAddress); // dont care what interface right now
-                console.log(`UDP Multicast Bound to 224.0.0.49 IFace:${udpAddress}`);
+                udpSocket.addMembership('224.0.0.49', '10.1.1.10'); // dont care what interface right now
+                //console.log(`UDP Multicast Bound to 224.0.0.49 IFace:${udpAddress}`);
             } catch (e) {
                 console.log('udpaddmembership failed:', e);
                 process.exit(100);
