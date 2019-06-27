@@ -25,12 +25,12 @@ udpSocket.on('message', (msg, rinfo) => {
                 case 'bindHome':
                     //this happens on the rio
                     if (msg.id == localSettings.ServiceInfo.id && !localSettings.home) {
-                        console.log('new home binding info received', msg.home,rinfo);
+                        console.log('new home binding info received', msg.home, rinfo);
                         localSettings.home = msg.home;
-                        localSettings.home.address = rinfo.address
+                        localSettings.home.address = rinfo.address;
                         localSettings.name = msg.name;
                         localSettings.description = msg.description;
-                        require('fs').writeFileSync(global.settingsFile, JSON.stringify(localSettings,null,2));
+                        require('fs').writeFileSync(global.settingsFile, JSON.stringify(localSettings, null, 2));
                         process.exit(100);
                     }
                     break;
@@ -40,7 +40,7 @@ udpSocket.on('message', (msg, rinfo) => {
                         localSettings.home = null;
                         localSettings.description = 'Available';
                         localSettings.name = 'Not Bonded';
-                        require('fs').writeFileSync(global.settingsFile, JSON.stringify(localSettings,null,2));
+                        require('fs').writeFileSync(global.settingsFile, JSON.stringify(localSettings, null, 2));
                         process.exit(100);
                     }
                     break;
@@ -56,29 +56,23 @@ udpSocket.on('error', (e) => {
     console.log('UDP Error:' + e);
 });
 udpSocket.startUdpServer = function (useSanet = false) {
-    if (useSanet){
+    if (useSanet) {
         Sanet = dgram.createSocket({type: 'udp4', reuseAddr: true});
-        console.log('Sanet created')
+        console.log('Sanet created!');
         Sanet.bind(41235, '10.1.1.1', () => {
-            console.log('Sanet bind')
             Sanet.addMembership('224.0.0.49', '10.1.1.1'); // dont care what interface right now
             Sanet.on('message', (msg, rinfo) => {
                 udpSocket.emit('message', msg, rinfo);
             });
         });
-
     }
     return new Promise(function (resolve, reject) {
-
-        udpSocket.bind(41235, '10.6.1.2', () => {
+        let ip = getIPv4NetworkInterfaces();
+        let udpAddress = (Sanet) ? '10.6.1.2' : ip[0].address;
+        udpSocket.bind(41235, udpAddress, () => {
             try {
-                let ip = getIPv4NetworkInterfaces();
-                console.log(`${ip.length} Network Interfaces found`);
-                udpSocket.addMembership('224.0.0.49', '10.6.1.2'); // dont care what interface right now
-                for (let i = 0; i < ip.length; ++i) {
-                    //   udpSocket.addMembership('224.0.0.49', ip[i].address); // dont care what interface right now
-                    // console.log(`UDP Multicast Bound to 224.0.0.49 IFace:${ip[i].address}`);
-                }
+                udpSocket.addMembership('224.0.0.49', udpAddress); // dont care what interface right now
+                console.log(`UDP Multicast Bound to 224.0.0.49 IFace:${udpAddress}`);
             } catch (e) {
                 console.log('udpaddmembership failed:', e);
                 process.exit(100);
