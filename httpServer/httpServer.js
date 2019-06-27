@@ -69,7 +69,6 @@ module.exports = function (startOptions = {}) {
     app.use(sessionLogger);
     /*
         These are the pages we server by default
-
      */
     app.get('/localSettings', function (req, res) {
         res.render('localSettings.ejs', {
