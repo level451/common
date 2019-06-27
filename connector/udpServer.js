@@ -58,41 +58,24 @@ udpSocket.on('error', (e) => {
     console.log('UDP Error:' + e);
 });
 udpSocket.startUdpServer = function (useSanet = false) {
-    // if (useSanet) {
-    //     Sanet = dgram.createSocket({type: 'udp4', reuseAddr: true});
-    //     console.log('Sanet created!');
-    //     Sanet.bind(41235, '10.1.1.1', () => {
-    //         Sanet.addMembership('224.0.0.49', '10.1.1.1'); // dont care what interface right now
-    //         Sanet.on('message', (msg, rinfo) => {
-    //             console.log('SAnet message',msg.toString(),rinfo)
-    //             udpSocket.emit('message', msg, rinfo);
-    //         });
-    //     });
-    // }
-    // return new Promise(function (resolve, reject) {
-    //     let ip = getIPv4NetworkInterfaces();
-    //     let udpAddress = (useSanet) ? '10.6.1.2' : ip[0].address;
-    //     udpSocket.bind(41235, udpAddress, () => {
-    //         try {
-    //             udpSocket.addMembership('224.0.0.49', udpAddress); // dont care what interface right now
-    //             console.log(`UDP Multicast Bound to 224.0.0.49 IFace:${udpAddress}`);
-    //         } catch (e) {
-    //             console.log('udpaddmembership failed:', e);
-    //             process.exit(100);
-    //         }
-    //         resolve();
-    //     });
-    // });
+    if (useSanet) {
+        Sanet = dgram.createSocket({type: 'udp4', reuseAddr: true});
+        console.log('Sanet created!');
+        Sanet.bind(41235, '10.1.1.1', () => {
+            Sanet.addMembership('224.0.0.49', '10.1.1.1'); // dont care what interface right now
+            Sanet.on('message', (msg, rinfo) => {
+                console.log('SAnet message',msg.toString(),rinfo)
+                udpSocket.emit('message', msg, rinfo);
+            });
+        });
+    }
     return new Promise(function (resolve, reject) {
-        let o = getIPv4NetworkInterfaces()
-        udpSocket.bind(41235,[o].address, () => {
+        let ip = getIPv4NetworkInterfaces();
+        let udpAddress = (useSanet) ? '10.6.1.2' : ip[0].address;
+        udpSocket.bind(41235, () => {
             try {
-                let ip = getIPv4NetworkInterfaces();
-                console.log(`${ip.length} Network Interfaces found`);
-                for (let i = 0; i < ip.length; ++i) {
-                    udpSocket.addMembership('224.0.0.49', ip[i].address); // dont care what interface right $
-                    console.log(`UDP Multicast Bound to 224.0.0.49 IFace:${ip[i].address}`);
-                }
+                udpSocket.addMembership('224.0.0.49', udpAddress); // dont care what interface right now
+                console.log(`UDP Multicast Bound to 224.0.0.49 IFace:${udpAddress}`);
             } catch (e) {
                 console.log('udpaddmembership failed:', e);
                 process.exit(100);
