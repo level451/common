@@ -62,13 +62,14 @@ udpSocket.startUdpServer = function (useSanet = false) {
         Sanet.bind(41235, '10.1.1.1', () => {
             Sanet.addMembership('224.0.0.49', '10.1.1.1'); // dont care what interface right now
             Sanet.on('message', (msg, rinfo) => {
+                console.log('SAnet message',msg.toString(),rinfo)
                 udpSocket.emit('message', msg, rinfo);
             });
         });
     }
     return new Promise(function (resolve, reject) {
         let ip = getIPv4NetworkInterfaces();
-        let udpAddress = (Sanet) ? '10.6.1.2' : ip[0].address;
+        let udpAddress = (useSanet) ? '10.6.1.2' : '10.1.1.10'
         udpSocket.bind(41235, udpAddress, () => {
             try {
                 udpSocket.addMembership('224.0.0.49', udpAddress); // dont care what interface right now
