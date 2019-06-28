@@ -439,7 +439,7 @@ module.exports.listenHttp = function () {
                 if (err) {
                     throw err;
                 }
-                console.log('Http Server Listening on port:' + JSON.stringify(server.address()));
+                console.log('Http Server Listening on port:' + JSON.stringify(server.address().port));
             }
         );
     }

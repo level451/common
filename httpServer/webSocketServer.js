@@ -38,11 +38,13 @@ module.exports.startWebSocketServer = function (server) {
         if (webSocket[ws.id]) {
             ws.id += '.' + Math.random().toString();
         }
-        console.log('New WebSocket Connection ID:' + ws.id + ' systemType:' + ws.systemType + ' Total Connections:' + wss.clients.size);
+        console.log('New WebSocket Connection ID:' + ws.id.substring(0,8) + ' systemType:' + ws.systemType +
+            ' Total Connections: \x1b[31m' + wss.clients.size+"\033[0m");
+        // "\x1b[" + colourCode + "m" + string + "\033[0m"
         webSocket[ws.id] = ws;
         if (ws.systemType == 'browser') {
             webSocketEmitter.emit('browserConnect', ws.id);
-            console.log('Browser Connected - systemType', ws.systemType,ws.id);
+            //console.log('Browser Connected - systemType', ws.systemType,ws.id);
 
         } else {
             webSocketEmitter.emit('connect', {id: ws.id, systemType: ws.systemType});
@@ -295,8 +297,8 @@ function subscribeEvents(ws) {
             if (ws.subscribeEvents[i].function) {
                 //       console.log('Already Bound Websocket ' + ws.id + ' to event ' + ws.subscribeEvents[i][subscribeObject] + ' in object:' + subscribeObject)
             } else {
-                console.log('FAILED to bind Bound Websocket ' + ws.id + ' to event ' + ws.subscribeEvents[i][subscribeObject] + ' in object:' + subscribeObject + ' NOT an Event Emitter');
-                console.log();
+                    // no emitter of this type are available
+                //  console.log('FAILED to bind Bound Websocket ' + ws.id + ' to event ' + ws.subscribeEvents[i][subscribeObject] + ' in object:' + subscribeObject + ' NOT an Event Emitter');
             }
         }
     }
@@ -451,7 +453,7 @@ function createGlobalEmitterObjectAsncyFunctions(d) {
 
 
 webSocketEmitter.on('browserConnect', (id) => {
-    console.log('emit connect', id);
+    // update session database on browser connect
     id = id.split('.'); // id[0] is sessionId & id[1] is requestId
     //console.log('emit connect session id:', id[1]);
     dbo.collection('requestLog').findOneAndUpdate({_id: database.ObjectID(id[1])},
