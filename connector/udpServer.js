@@ -63,9 +63,9 @@ udpSocket.startUdpServer = function (usesaNet = false) {
             let options = {port: 41235};
             console.log('saNet Address:',saNetIp)
 
-            if (process.platform != 'linux') {
+         //   if (process.platform != 'linux') {
                 options.address = saNetIp;
-            }
+           // }
             saNet = dgram.createSocket({type: 'udp4', reuseAddr: true});
             console.log('saNet created!');
             saNet.bind(options, () => {
