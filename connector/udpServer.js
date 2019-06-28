@@ -58,28 +58,7 @@ udpSocket.on('error', (e) => {
 udpSocket.startUdpServer = function (usesaNet = false) {
     //updated
     if (usesaNet) {
-        let saNetIp=getIPv4NetworkInterfaces(localSettings.network.saNet)
-        if (saNetIp){
-            let options = {port: 41235};
-            console.log('saNet Address:',saNetIp)
-
-         //   if (process.platform != 'linux') {
-                options.address = saNetIp;
-           // }
-            saNet = dgram.createSocket({type: 'udp4', reuseAddr: true});
-            console.log('saNet created!');
-            saNet.bind(options, () => {
-                saNet.addMembership('224.0.0.49', saNetIp); // dont care what interface right now
-                saNet.on('message', (msg, rinfo) => {
-     //           console.log('sanet',msg.toString(),rinfo)
-                    udpSocket.emit('message', msg, rinfo);
-                });
-            });
-
-        }
-    else {
-        console.log('saNet Not Available')
-        }
+        connectsaNet()
     }
     return new Promise(function (resolve, reject) {
         let ip = getIPv4NetworkInterfaces();
@@ -102,6 +81,34 @@ udpSocket.startUdpServer = function (usesaNet = false) {
         });
     });
 };
+function connectsaNet (){
+    let saNetIp=getIPv4NetworkInterfaces(localSettings.network.saNet)
+    if (saNetIp){
+        let options = {port: 41235};
+        console.log('saNet Address:',saNetIp)
+
+        //   if (process.platform != 'linux') {
+        options.address = saNetIp;
+        // }
+        saNet = dgram.createSocket({type: 'udp4', reuseAddr: true});
+        console.highlight('saNet created!');
+        saNet.bind(options, () => {
+            saNet.addMembership('224.0.0.49', saNetIp); // dont care what interface right now
+            saNet.on('message', (msg, rinfo) => {
+                //           console.log('sanet',msg.toString(),rinfo)
+                udpSocket.emit('message', msg, rinfo);
+            });
+        });
+
+    }
+    else {
+        setTimeout(function(){
+                connectsaNet()
+        },30000)
+        //console.highlight('saNet Not Available')
+    }
+
+}
 udpSocket.sendObject = function (data) { // convert to promise?
     udpSocket.send(JSON.stringify(data), 41235, '224.0.0.49');
     if (saNet) {
