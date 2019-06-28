@@ -31,11 +31,11 @@ module.exports = {
         let string = util.format(util.format.apply(this, arguments));
         if (string.length > 100 || string.includes('\n')) {
             process.stdout.write(''.padEnd(100) + Date().toString().substr(16, 9) +
-                colourise(34, fileName.padEnd(20)) + '\n');
+                colourise(32, fileName.padEnd(20)) + '\n');
             process.stdout.write(string + '\n');
         } else {
             process.stdout.write(string.padEnd(100) + Date().toString().substr(16, 9) +
-                colourise(34, fileName.padEnd(20)) + '\n');
+                colourise(32, fileName.padEnd(20)) + '\n');
         }
         // process.stdout.write(arguments[0] + '-'+module.filename+"\n");
         return;
