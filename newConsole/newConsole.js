@@ -31,11 +31,32 @@ module.exports = {
         let string = util.format(util.format.apply(this, arguments));
         if (string.length > 100 || string.includes('\n')) {
             process.stdout.write(''.padEnd(100) + Date().toString().substr(16, 9) +
-                colourise(32, fileName.padEnd(20)) + '\n');
+                colourise(36, fileName.padEnd(20)) + '\n');
             process.stdout.write(string + '\n');
         } else {
             process.stdout.write(string.padEnd(100) + Date().toString().substr(16, 9) +
-                colourise(32, fileName.padEnd(20)) + '\n');
+                colourise(36, fileName.padEnd(20)) + '\n');
+        }
+        // process.stdout.write(arguments[0] + '-'+module.filename+"\n");
+        return;
+    },
+    highlight: function () {
+        Error.stackTraceLimit = 2;
+        let stackInfo = Error().stack.split('\n');
+        Error.stackTraceLimit = 10;
+        let fileNameStart = stackInfo[2].lastIndexOf('\\') + 1;
+        let fileNameEnd = stackInfo[2].indexOf(':', fileNameStart);
+        let fileName = stackInfo[2].substring(fileNameStart, fileNameEnd) + ':' +
+            stackInfo[2].substring(fileNameEnd + 1, stackInfo[2].lastIndexOf(':'));
+        //console.log.apply(console,arguments)
+        let string = util.format(util.format.apply(this, arguments));
+        if (string.length > 100 || string.includes('\n')) {
+            process.stdout.write(''.padEnd(100) + Date().toString().substr(16, 9) +
+                colourise(33, fileName.padEnd(20)) + '\n');
+            process.stdout.write(string + '\n');
+        } else {
+            process.stdout.write(colourise(33, string.padEnd(100)) + Date().toString().substr(16, 9) +
+                colourise(33, fileName.padEnd(20)) + '\n');
         }
         // process.stdout.write(arguments[0] + '-'+module.filename+"\n");
         return;
