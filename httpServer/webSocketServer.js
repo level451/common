@@ -39,7 +39,7 @@ module.exports.startWebSocketServer = function (server) {
             ws.id += '.' + Math.random().toString();
         }
         console.log('New WebSocket Connection ID:' + ws.id.substring(0,8) + ' systemType:' + ws.systemType +
-            ' Total Connections: \x1b[31m' + wss.clients.size+"\033[0m");
+            ' Total Connections: \x1b[31m' + wss.clients.size+"         -\033[0m");
         // "\x1b[" + colourCode + "m" + string + "\033[0m"
         webSocket[ws.id] = ws;
         if (ws.systemType == 'browser') {

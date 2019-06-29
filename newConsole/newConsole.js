@@ -17,7 +17,6 @@ util = require("util");
 //     reset = '\033[0m';
 //
 const oldconsole = console;
-process.stdout.write('NewConsole Active!' + '\n');
 module.exports = {
     log: function () {
         Error.stackTraceLimit = 2;
