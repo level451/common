@@ -58,7 +58,9 @@ udpSocket.on('error', (e) => {
 udpSocket.startUdpServer = function (usesaNet = false) {
     //updated
     if (usesaNet) {
-        connectsaNet()
+        if (!connectsaNet()) {
+            console.highlight('saNet failed to start - waiting for adapter to become available');
+        }
     }
     return new Promise(function (resolve, reject) {
         let ip = getIPv4NetworkInterfaces();
@@ -80,12 +82,13 @@ udpSocket.startUdpServer = function (usesaNet = false) {
         });
     });
 };
-function connectsaNet (){
-    let saNetIp=getIPv4NetworkInterfaces(localSettings.network.saNet)
-    if (saNetIp){
-        let options = {port: 41235};
-        console.log('saNet Address:',saNetIp)
 
+
+function connectsaNet(startedFromTimer = false) {
+    let saNetIp = getIPv4NetworkInterfaces(localSettings.network.saNet);
+    if (saNetIp) {
+        let options = {port: 41235};
+        console.log('saNet Address from adapter:', saNetIp);
         //   if (process.platform != 'linux') {
         options.address = saNetIp;
         // }
@@ -97,17 +100,25 @@ function connectsaNet (){
                 //           console.log('sanet',msg.toString(),rinfo)
                 udpSocket.emit('message', msg, rinfo);
             });
+            // now that we know the saNet is available
+            // start the dhcp server
+            process.send({type: 'startDHCP'});
+            if (startedFromTimer) {
+                // if saNet wasn;t available at startup -
+                // resert the git server so it binds to the saNet adapter
+                process.send({type: 'restartGit'});
+            }
         });
-
+        return true;
+    } else {
+        setTimeout(function () {
+            connectsaNet(true);
+        }, 5000);
+        return false;
     }
-    else {
-        setTimeout(function(){
-                connectsaNet()
-        },30000)
-        //console.highlight('saNet Not Available')
-    }
-
 }
+
+
 udpSocket.sendObject = function (data) { // convert to promise?
     udpSocket.send(JSON.stringify(data), 41235, '224.0.0.49');
     if (saNet) {
@@ -141,29 +152,27 @@ module.exports = udpSocket;
 
 
 function getIPv4NetworkInterfaces(mac = false) {
-    var networkInterfaces = Object.entries(require('os').networkInterfaces())
-    var IPv4Interfaces = []
-    for (var i=0;i < networkInterfaces.length;++i){
+    var networkInterfaces = Object.entries(require('os').networkInterfaces());
+    var IPv4Interfaces = [];
+    for (var i = 0; i < networkInterfaces.length; ++i) {
         // this will iterate through each NIC
-
-        for (var j=0; j < networkInterfaces[i][1].length;++j ){
+        for (var j = 0; j < networkInterfaces[i][1].length; ++j) {
             // this will iterate through each binding in each nic
-            if (networkInterfaces[i][1][j].internal == false && networkInterfaces[i][1][j].family == "IPv4"){
-                if (mac == networkInterfaces[i][1][j].mac ){
-                    return networkInterfaces[i][1][j].address
+            if (networkInterfaces[i][1][j].internal == false && networkInterfaces[i][1][j].family == "IPv4") {
+                if (mac == networkInterfaces[i][1][j].mac) {
+                    return networkInterfaces[i][1][j].address;
                 }
                 IPv4Interfaces.push({
-                    name:networkInterfaces[i][0],
-                    mac:networkInterfaces[i][1][j].mac,
-                    address:networkInterfaces[i][1][j].address})
+                    name: networkInterfaces[i][0],
+                    mac: networkInterfaces[i][1][j].mac,
+                    address: networkInterfaces[i][1][j].address
+                });
             }
-
         }
     }
-    if (mac){
-        return false
+    if (mac) {
+        return false;
     } else {
-        return (IPv4Interfaces)
+        return (IPv4Interfaces);
     }
-
 }
