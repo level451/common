@@ -62,7 +62,7 @@ function webSocketConnect(resolve, reject) {
             resolve();
         }
         console.log('---connected to home---');
-        wscEmitter.emit('connect');
+        wscEmitter.emit('connect',connectionParameters.remoteAddress.substring(0,connectionParameters.remoteAddress.indexOf(':')));
     });
     ws.on('ping', heartbeat);
     ws.on('message', function incoming(d) {
