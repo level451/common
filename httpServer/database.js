@@ -25,7 +25,6 @@ database.getSessionLog = async function (limit = 2, skip = 0, filter = {}) {
     }
 };
 database.getRequestLog = async function (limit = 50, skip = 0, filter = {}) {
-    console.log(filter);
     try {
         let rslt = await dbo.collection('requestLog').find(filter).limit(limit).skip(skip).project({userId: 0}).sort({_id: -1}).toArray();
         return rslt;

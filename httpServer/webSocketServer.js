@@ -93,7 +93,6 @@ module.exports.startWebSocketServer = function (server) {
                     // it's an emitter - emit the message
                     //global[obj.emitter].emit(obj.eventName, ...obj.args);
                     if (typeof (obj.args[0]) == 'object' && obj.args[0] != null) {
-                        console.log('dddd', typeof (obj.args[0]), obj.args[0]);
                         obj.args[0].timeStamp = new Date();
                     }
                     global[obj.emitter].emit(obj.eventName, ...obj.args);
