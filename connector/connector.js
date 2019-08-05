@@ -44,6 +44,7 @@ function webSocketConnect(resolve, reject) {
         console.log('connection pending');
         return false;
     }
+
     if (!localSettings || !localSettings.home.address) {
         console.log("Can't connect to MasterConsole - address not in localsettings");
         return;
