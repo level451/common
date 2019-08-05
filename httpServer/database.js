@@ -51,14 +51,16 @@ database.getSettings = async function (type = 'system') {
 };
 database.updateSettings = async function (type, data) {
     try {
-        let rslt = await dbo.collection('settings').updateOne({type: type},
-            {$set: data}, {upsert: true});
+        let rslt = await dbo.collection('settings').findOneAndUpdate({type: type},
+            {$set: data}, {upsert: true,returnOriginal:false});
+        global.settings = rslt.value
         return rslt;
     } catch (e) {
         console.log(e);
     }
 };
 database.updateEventLog = async function (data) {
+
     try {
 
         let rslt = await dbo.collection('eventLog').insertOne(data)
