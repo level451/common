@@ -5,7 +5,6 @@ const udpServer = require('./udpServer');
 global.connectionPending = false;
 wscEmitter.connected = false;
 wscEmitter.id = '';
-
 /*
 *
 *
