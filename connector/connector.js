@@ -44,7 +44,6 @@ function webSocketConnect(resolve, reject) {
         console.log('connection pending');
         return false;
     }
-
     if (!localSettings || !localSettings.home.address) {
         console.log("Can't connect to MasterConsole - address not in localsettings");
         return;
@@ -63,7 +62,7 @@ function webSocketConnect(resolve, reject) {
             resolve();
         }
         console.log('---connected to home---');
-        wscEmitter.emit('connect',connectionParameters.remoteAddress.substring(0,connectionParameters.remoteAddress.indexOf(':')));
+        wscEmitter.emit('connect', connectionParameters.remoteAddress.substring(0, connectionParameters.remoteAddress.indexOf(':')));
     });
     ws.on('ping', heartbeat);
     ws.on('message', function incoming(d) {
