@@ -29,16 +29,19 @@
         margin-bottom: 2px;
     }
     #headerShowImage{
-        margin-left:auto;
-        margin-right:auto;
-        height:72px;
+       float:right;
+        height:80px;
+        display:block;
+        margin-right:5px;
     }
 
     #title {
         font-size:  5vw;
         color: #6a6c6e;
         padding-top:calc(1.1vw + 10px);
-        margin:0;
+        margin-right:40px;
+        display:inline;
+
     }
     #pagename{
         display:inline;
@@ -111,6 +114,7 @@
     background-color: whitesmoke;
     font-family: Helvetica, Arial,sans-serif;
     width: 100%;
+    position:relative;
 }
 
 
