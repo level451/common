@@ -47,10 +47,9 @@ udpSocket.on('message', (msg, rinfo) => {
                     break;
                 case 'setChannel':
                     if (msg.id == localSettings.ServiceInfo.id ) {
-                        console.log('channel set recieved'.msg.channel);
+                        console.log('channel set received:',msg.channel);
                         localSettings.channel = msg.channel;
                         require('fs').writeFileSync(global.settingsFile, JSON.stringify(localSettings, null, 2));
-                        process.exit(100);
                     }
                     break;
 
