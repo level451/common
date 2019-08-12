@@ -30,6 +30,7 @@ udpSocket.on('message', (msg, rinfo) => {
                         localSettings.home.address = rinfo.address;
                         localSettings.name = msg.name;
                         localSettings.description = msg.description;
+                        localSettings.channel = msg.channel;
                         require('fs').writeFileSync(global.settingsFile, JSON.stringify(localSettings, null, 2));
                         process.exit(100);
                     }
@@ -44,6 +45,15 @@ udpSocket.on('message', (msg, rinfo) => {
                         process.exit(100);
                     }
                     break;
+                case 'setChannel':
+                    if (msg.id == localSettings.ServiceInfo.id ) {
+                        console.log('channel set recieved'.msg.channel);
+                        localSettings.channel = msg.channel;
+                        require('fs').writeFileSync(global.settingsFile, JSON.stringify(localSettings, null, 2));
+                        process.exit(100);
+                    }
+                    break;
+
                 default:
                     udpSocket.emit(msg.messageType, msg);
             }
@@ -128,7 +138,7 @@ udpSocket.sendObject = function (data) { // convert to promise?
 udpSocket.discover = async function (systemType = 'ALL') {
     udpSocket.sendObject({messageType: 'discover', systemType: systemType});
 };
-udpSocket.bindHome = async function (id, home, rioInfo, name = id, description = id) {
+udpSocket.bindHome = async function (id, home, rioInfo, name = id, description = id,channel = 0) {
     // this all happens on the cs6 - from the webpage iosetup
     udpSocket.sendObject({messageType: 'bindHome', id: id, home: home, name: name, description: description});
     rioInfo.bonded = true;
@@ -136,10 +146,16 @@ udpSocket.bindHome = async function (id, home, rioInfo, name = id, description =
     rioInfo.localSettings.name = name;
     rioInfo.localSettings.description = description;
     rioInfo.connected == false;
+    rioInfo.channel = channel;
     delete rioInfo.messageType;
     global.settings.connectedRios[id] = rioInfo;
     database.updateSettings('system', global.settings);
 };
+udpSocket.setChannel = async function(id,channel = 0){
+    udpSocket.sendObject({messageType: 'setChannel', id: id,channel:channel});
+    global.settings.connectedRios[id].channel  = channel;
+    database.updateSettings('system', global.settings);
+}
 udpSocket.unbindHome = async function (id) {
     udpSocket.sendObject({messageType: 'unbindHome', id: id});
     delete global.settings.connectedRios[id];
