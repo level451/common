@@ -53,7 +53,10 @@ database.updateSettings = async function (type, data) {
     try {
         let rslt = await dbo.collection('settings').findOneAndUpdate({type: type},
             {$set: data}, {upsert: true,returnOriginal:false});
-        global.settings = rslt.value
+        if (type == 'system'){
+            global.settings = rslt.value
+        }
+
         return rslt;
     } catch (e) {
         console.log(e);

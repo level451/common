@@ -142,3 +142,6 @@
 
 /*need to change the padding on the container body*/
 body{margin:0}
+.noselect {
+    user-select:none;
+}
