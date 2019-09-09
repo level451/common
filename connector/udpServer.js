@@ -52,6 +52,13 @@ udpSocket.on('message', (msg, rinfo) => {
                         require('fs').writeFileSync(global.settingsFile, JSON.stringify(localSettings, null, 2));
                     }
                     break;
+                case 'setRXOnly':
+                    if (msg.id == localSettings.ServiceInfo.id ) {
+                        console.log('rxOnly set received:',msg.rxOnly);
+                        localSettings.rxOnly = msg.rxOnly;
+                        require('fs').writeFileSync(global.settingsFile, JSON.stringify(localSettings, null, 2));
+                    }
+                    break;
 
                 default:
                     udpSocket.emit(msg.messageType, msg);
@@ -155,6 +162,12 @@ udpSocket.setChannel = async function(id,channel = 0){
     global.settings.connectedRios[id].channel  = channel;
     database.updateSettings('system', global.settings);
 }
+udpSocket.setRXOnly = async function(id,rxOnly = false){
+    udpSocket.sendObject({messageType: 'setRXOnly', id: id,rxOnly:rxOnly});
+    global.settings.connectedRios[id].rxOnly  = rxOnly;
+    database.updateSettings('system', global.settings);
+}
+
 udpSocket.unbindHome = async function (id) {
     udpSocket.sendObject({messageType: 'unbindHome', id: id});
     delete global.settings.connectedRios[id];
