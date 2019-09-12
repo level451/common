@@ -50,6 +50,8 @@ udpSocket.on('message', (msg, rinfo) => {
                         console.log('channel set received:',msg.channel);
                         localSettings.channel = msg.channel;
                         require('fs').writeFileSync(global.settingsFile, JSON.stringify(localSettings, null, 2));
+                        process.exit(100);
+
                     }
                     break;
                 case 'setRXOnly':
