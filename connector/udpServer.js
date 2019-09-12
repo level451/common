@@ -118,7 +118,8 @@ function connectsaNet(startedFromTimer = false) {
             });
             // now that we know the saNet is available
             // start the dhcp server
-            process.send({type: 'startDHCP'});
+           // process.send({type: 'startDHCP'});
+            global.dhcp = require(process.cwd()+'/dhcp.js')
             if (startedFromTimer) {
                 // if saNet wasn;t available at startup -
                 // resert the git server so it binds to the saNet adapter

@@ -14,13 +14,24 @@ module.exports.startWebSocketServer = function (server) {
         // make sure we allow this connection
         //
         // RIO CHECK
-        if (ws.systemType == 'RIO' && !settings.connectedRios[ws.id]) {
-            console.log(`Rio not in connectedRios  ${ws.id} tried to connect - sending disconnect command via udp`);
-            if (udpServer) {
-                udpServer.unbindHome(ws.id);
+        if (ws.systemType == 'RIO' ) {
+            if (!settings.connectedRios[ws.id]){
+                console.log(`Rio not in connectedRios  ${ws.id} tried to connect - sending disconnect command via udp`);
+                if (udpServer) {
+                    udpServer.unbindHome(ws.id);
+                    ws.close();
+                    return;
+                }
+
+            } else if (webSocket[ws.id]){
+                console.log('RIO Already Connected - closing connection',ws.id)
                 ws.close();
-                return;
+                return
             }
+
+
+
+
         }
         if (!parameters.id && !parameters.browser) { //reject websocket wequests that are not from approved mac addresses
             ws.close();
@@ -30,16 +41,23 @@ module.exports.startWebSocketServer = function (server) {
         ws.isAlive = true;
         ws.remoteAddress = ws._socket.remoteAddress;
         ws.connectTime = new Date();
-        // in case of duplicate ids
         if (ws.systemType == 'RIO') {
             global.settings.connectedRios[ws.id].connected = true;
-            database.updateSettings('system', global.settings);
+            global.settings.connectedRios[ws.id].address = ws.remoteAddress.substr(ws.remoteAddress.lastIndexOf(':')+1)
+
+            database.updateSettings('system', global.settings).then((rslt)=>{
+                //console.log(rslt)
+             //   console.log('RIO Set to CONNNECTED ------------',global.settings.connectedRios[ws.id].connected,ws.id)
+            });
+
         }
-        if (webSocket[ws.id]) {
+        // in case of duplicate ids
+
+        if (webSocket[ws.id] && ws.systemType != 'RIO') {
             ws.id += '.' + Math.random().toString();
         }
         console.log('New WebSocket Connection ID:' + ws.id.substring(0,8) + ' systemType:' + ws.systemType +
-            ' Total Connections: \x1b[31m' + wss.clients.size+"         -\033[0m");
+            ' Total Connections: ' , wss.clients.size);
         // "\x1b[" + colourCode + "m" + string + "\033[0m"
         webSocket[ws.id] = ws;
         if (ws.systemType == 'browser') {
@@ -48,7 +66,7 @@ module.exports.startWebSocketServer = function (server) {
 
         } else {
             webSocketEmitter.emit('connect', {id: ws.id, systemType: ws.systemType});
-            console.log('Rio Connected - systemType', ws.systemType,ws.id);
+          //  console.log('Rio Connected - systemType & connected', ws.systemType,ws.id,global.settings.connectedRios[ws.id].connected);
         }
         ws.on('message', function incoming(message) {
             //console.log(message)
@@ -70,7 +88,7 @@ module.exports.startWebSocketServer = function (server) {
             if (obj.emitterDefinition) {
                 // emitterDefinition now includes localsettings
                 if (obj.localSettings && global.settings && global.settings.connectedRios[ws.id]) {
-                    console.log('Emitter Definition from',ws.id)
+               //     console.log('Emitter Definition from',ws.id)
                     global.settings.connectedRios[ws.id].localSettings = obj.localSettings;
                     database.updateSettings('system', global.settings);
                 }
@@ -183,7 +201,7 @@ module.exports.startWebSocketServer = function (server) {
         ws.on('pong', heartbeat);
         ws.on('close', function () {
             if (ws.systemType == 'RIO' && global.settings.connectedRios[ws.id]) {
-                //console.log(global.settings,ws.id)
+                console.log('RIO DISCONNECT',ws.id)
                 global.settings.connectedRios[ws.id].connected = false;
                 database.updateSettings('system', global.settings);
             }

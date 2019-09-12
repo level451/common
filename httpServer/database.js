@@ -49,15 +49,23 @@ database.getSettings = async function (type = 'system') {
         console.log(e);
     }
 };
-database.updateSettings = async function (type, data) {
+database.updateSettings = async function (type, data,emitReloadAssembledShowData = false) {
     try {
         let rslt = await dbo.collection('settings').findOneAndUpdate({type: type},
             {$set: data}, {upsert: true,returnOriginal:false});
         if (type == 'system'){
-            global.settings = rslt.value
+            if (global.settings.showName != rslt.value.showName){
+                database.emit('showNameChange',rslt.value.showName)
+            }
+
+           // global.settings = rslt.value
         }
 
+        if (emitReloadAssembledShowData){
+            database.emit('reloadAssembledShowData')
+        }
         return rslt;
+
     } catch (e) {
         console.log(e);
     }
