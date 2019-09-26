@@ -14,24 +14,19 @@ module.exports.startWebSocketServer = function (server) {
         // make sure we allow this connection
         //
         // RIO CHECK
-        if (ws.systemType == 'RIO' ) {
-            if (!settings.connectedRios[ws.id]){
+        if (ws.systemType == 'RIO') {
+            if (!settings.connectedRios[ws.id]) {
                 console.log(`Rio not in connectedRios  ${ws.id} tried to connect - sending disconnect command via udp`);
                 if (udpServer) {
                     udpServer.unbindHome(ws.id);
                     ws.close();
                     return;
                 }
-
-            } else if (webSocket[ws.id]){
-                console.log('RIO Already Connected - closing connection',ws.id)
+            } else if (webSocket[ws.id]) {
+                console.log('RIO Already Connected - closing connection', ws.id);
                 ws.close();
-                return
+                return;
             }
-
-
-
-
         }
         if (!parameters.id && !parameters.browser) { //reject websocket wequests that are not from approved mac addresses
             ws.close();
@@ -43,30 +38,23 @@ module.exports.startWebSocketServer = function (server) {
         ws.connectTime = new Date();
         if (ws.systemType == 'RIO') {
             global.settings.connectedRios[ws.id].connected = true;
-            global.settings.connectedRios[ws.id].address = ws.remoteAddress.substr(ws.remoteAddress.lastIndexOf(':')+1)
-
-            database.updateSettings('system', global.settings).then((rslt)=>{
-                //console.log(rslt)
-             //   console.log('RIO Set to CONNNECTED ------------',global.settings.connectedRios[ws.id].connected,ws.id)
+            global.settings.connectedRios[ws.id].address = ws.remoteAddress.substr(ws.remoteAddress.lastIndexOf(':') + 1);
+            database.updateSettings('system', global.settings).then((rslt) => {
             });
-
         }
         // in case of duplicate ids
-
         if (webSocket[ws.id] && ws.systemType != 'RIO') {
             ws.id += '.' + Math.random().toString();
         }
-        console.log('New WebSocket Connection ID:' + ws.id.substring(0,8) + ' systemType:' + ws.systemType +
-            ' Total Connections: ' , wss.clients.size);
-        // "\x1b[" + colourCode + "m" + string + "\033[0m"
+        console.log('New WebSocket Connection ID:' + ws.id.substring(0, 8) + ' systemType:' + ws.systemType +
+            ' Total Connections: ', wss.clients.size);
         webSocket[ws.id] = ws;
         if (ws.systemType == 'browser') {
             webSocketEmitter.emit('browserConnect', ws.id);
             //console.log('Browser Connected - systemType', ws.systemType,ws.id);
-
         } else {
             webSocketEmitter.emit('connect', {id: ws.id, systemType: ws.systemType});
-          //  console.log('Rio Connected - systemType & connected', ws.systemType,ws.id,global.settings.connectedRios[ws.id].connected);
+            //  console.log('Rio Connected - systemType & connected', ws.systemType,ws.id,global.settings.connectedRios[ws.id].connected);
         }
         ws.on('message', function incoming(message) {
             //console.log(message)
@@ -79,34 +67,19 @@ module.exports.startWebSocketServer = function (server) {
                 unsubscribeEvents(ws);
                 ws.subscribeEvents = obj.eventsToSubscribeTo;
                 subscribeEvents(ws);
-            }
-            if (obj.updateLocalSettings) {
-                console.log('localsettingsupdate')
+            } else if (obj.updateLocalSettings) {
+                console.log('localsettingsupdate');
                 global.settings.connectedRios[ws.id].localSettings = obj.localSettings;
                 database.updateSettings('system', global.settings);
-            }
-            if (obj.emitterDefinition) {
+            } else if (obj.emitterDefinition) {
                 // emitterDefinition now includes localsettings
                 if (obj.localSettings && global.settings && global.settings.connectedRios[ws.id]) {
-               //     console.log('Emitter Definition from',ws.id)
+                    //     console.log('Emitter Definition from',ws.id)
                     global.settings.connectedRios[ws.id].localSettings = obj.localSettings;
                     database.updateSettings('system', global.settings);
                 }
                 createGlobalEmitterObject(obj, ws);
-                //test lines below
-                // if (typeof ted == 'object') {
-                //     ted.asyncTest('ted1', 'call ted test (parm0)', 'parm1', 2).then(function (s) {
-                //         console.log('--------------', s);
-                //     });
-                //     ted.getMembers().then(function (s) {
-                //         console.log('get members', s);
-                //     });
-                // }
-                // ted.asyncTest('call ted test function','val2',3).then(function (s) {
-                //     console.log('--------------',s)
-                // })
-            }
-            if (obj.remoteEmit) { // got message from remote emitter
+            } else if (obj.remoteEmit) { // got message from remote emitter
                 if (global[obj.emitter] instanceof require("events").EventEmitter) {
                     // it's an emitter - emit the message
                     //global[obj.emitter].emit(obj.eventName, ...obj.args);
@@ -125,8 +98,7 @@ module.exports.startWebSocketServer = function (server) {
                     }
                     global[obj.emitter].emit(obj.eventName, ...obj.args);
                 }
-            }
-            if (obj.remoteAsyncFunction) {
+            } else if (obj.remoteAsyncFunction) {
                 // call to an Asyncfunction from the remote
                 // this would come in from a web browser
                 //
@@ -178,8 +150,7 @@ module.exports.startWebSocketServer = function (server) {
                         })
                     );
                 }
-            }
-            if (obj.killSession) {
+            } else if (obj.killSession) {
                 console.log('kill Session', obj.requestLogId);
                 for (var id in webSocket) {
                     if (webSocket[id].systemType == 'browser' && id.split('.')[1] == obj.requestLogId) {
@@ -196,12 +167,17 @@ module.exports.startWebSocketServer = function (server) {
                         break;
                     }
                 }
+            } else {
+                // no other case applies emit the data to be processed elseware
+                if (obj.emit) {
+                    webSocketEmitter.emit(obj.emit, obj,ws);
+                }
             }
         });
         ws.on('pong', heartbeat);
         ws.on('close', function () {
             if (ws.systemType == 'RIO' && global.settings.connectedRios[ws.id]) {
-                console.log('RIO DISCONNECT',ws.id)
+                console.log('RIO DISCONNECT', ws.id);
                 global.settings.connectedRios[ws.id].connected = false;
                 database.updateSettings('system', global.settings);
             }
@@ -314,7 +290,7 @@ function subscribeEvents(ws) {
             if (ws.subscribeEvents[i].function) {
                 //       console.log('Already Bound Websocket ' + ws.id + ' to event ' + ws.subscribeEvents[i][subscribeObject] + ' in object:' + subscribeObject)
             } else {
-                    // no emitter of this type are available
+                // no emitter of this type are available
                 //  console.log('FAILED to bind Bound Websocket ' + ws.id + ' to event ' + ws.subscribeEvents[i][subscribeObject] + ' in object:' + subscribeObject + ' NOT an Event Emitter');
             }
         }

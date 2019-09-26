@@ -78,11 +78,12 @@ database.updateEventLog = async function (data) {
     } catch (e) {
         console.log(e);
     }
+    database.emit('newEventLogEntry',data)
 };
-database.getEventLog = async function (filter = {}) {
+database.getEventLog = async function (limit = 1000, skip = 0,filter = {},newestFirst = false) {
    // console.log(filter);
     try {
-        let rslt = await dbo.collection('eventLog').find(filter).project({_id: 0}).toArray();
+        let rslt = await dbo.collection('eventLog').find(filter).limit(limit).skip(skip).project({}).sort({_id:(newestFirst)?-1:1}).toArray();
         return rslt;
     } catch (e) {
         console.log(e);

@@ -47,8 +47,8 @@ wss.onmessage = function (evt) {
         } else if (obj.logOut) {
             window.location.href = '/login';
         } else {
-            //  this.emit('message', obj);
-            console.log('??', obj);
+              this.emit('message', obj);
+           // console.log('??', obj);
         }
     } catch (e) {
         //this.emit('message', evt.data);
