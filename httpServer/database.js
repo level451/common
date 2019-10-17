@@ -57,8 +57,9 @@ database.updateSettings = async function (type, data,emitReloadAssembledShowData
             if (global.settings.showName != rslt.value.showName){
                 database.emit('showNameChange',rslt.value.showName)
             }
+            global.settings = rslt.value
 
-           // global.settings = rslt.value
+
         }
 
         if (emitReloadAssembledShowData){
@@ -109,7 +110,7 @@ var client;
 // Use connect method to connect to the server
 module.exports.getMongoConnection = function (databaseName, requiredCollections) {
     return new Promise(function (resolve, reject) {
-        MongoClient.connect(url, {useNewUrlParser: true}).then((client) => {
+        MongoClient.connect(url, {useNewUrlParser: true, useUnifiedTopology: true }).then((client) => {
             checkIfCollectionsExist(client.db(databaseName));
             clearSystemInfoConnectionState(client.db(databaseName)); // reset the connection state of everything connected on restart
             resolve(client.db(databaseName));
