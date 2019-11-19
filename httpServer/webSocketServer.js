@@ -55,6 +55,9 @@ module.exports.startWebSocketServer = function (server) {
         } else {
             webSocketEmitter.emit('connect', {id: ws.id, systemType: ws.systemType});
             //  console.log('Rio Connected - systemType & connected', ws.systemType,ws.id,global.settings.connectedRios[ws.id].connected);
+            if (ws.systemType == 'RIO'){
+                settings.connectedRios[ws.id].connected = true;
+            }
         }
         ws.on('message', function incoming(message) {
             //console.log(message)
