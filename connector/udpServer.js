@@ -179,6 +179,10 @@ udpSocket.unbindHome = async function (id) {
 udpSocket.test = async function (...id) {
     return [...id];
 };
+udpSocket.internetIP = function(){
+    return  getIPv4NetworkInterfaces(localSettings.network.internet)
+}
+
 module.exports = udpSocket;
 
 
