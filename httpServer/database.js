@@ -125,12 +125,12 @@ module.exports.getMongoConnection = function (databaseName, requiredCollections)
                 return;
             }
             let allCollectionsExist = true;
-            let collectionrList = [];
+            let collectionList = [];
             for (let i = 0; i < rslt.cursor.firstBatch.length; ++i) {
-                collectionrList.push(rslt.cursor.firstBatch[i].name);
+                collectionList.push(rslt.cursor.firstBatch[i].name);
             }
             for (let i = 0; i < requiredCollections.length; ++i) {
-                if (collectionrList.indexOf(requiredCollections[i].name) == -1) {
+                if (collectionList.indexOf(requiredCollections[i].name) == -1) {
                     // collection doesnt exist
                     allCollectionsExist = false;
                     console.log('Collection Doesnt Exist:' + requiredCollections[i].name);
