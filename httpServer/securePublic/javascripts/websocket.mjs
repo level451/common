@@ -1,4 +1,4 @@
-import * as remoteObject from '/javascripts/remoteObject.mjs';
+import * as remoteObject from '/javascripts/remoteobject.mjs';
 import eventify from '/javascripts/eventify.mjs';
 
 if (location.protocol === 'https:') {
