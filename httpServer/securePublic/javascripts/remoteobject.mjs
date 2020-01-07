@@ -1,5 +1,5 @@
 import eventify from '/javascripts/eventify.mjs';
-import {sendObject} from '/javascripts/webSocket.mjs';
+import {sendObject} from '/javascripts/websocket.mjs';
 
 export function createGlobalEmitterObjectFunctions(d) {
     createGlobalEmitterObjectAsncyFunctions(d);

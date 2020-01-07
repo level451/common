@@ -1,6 +1,6 @@
 const subscribeEvents = [{"database": "requestLog"}];
-import * as ws from '/javascripts/webSocket.mjs';
-import * as formatDate from '/javascripts/formatDate.mjs';
+import * as ws from '/javascripts/websocket.mjs';
+import * as formatDate from '/javascripts/formatdate.mjs';
 
 let requestLogSkip = 0;
 let sessionSkip = 0;
