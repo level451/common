@@ -73,7 +73,7 @@ module.exports = function (startOptions = {}) {
     app.get('/localSettings', function (req, res) {
         res.render('localSettings.ejs', {
             localSettings: (localSettings || localSettingsDescription),
-            pageName: 'Local Maching Settings'
+            pageName: 'Local Machine Settings'
         });
     });
     app.post('/localSettings', bodyParser.urlencoded({extended: true}), function (req, res) {
