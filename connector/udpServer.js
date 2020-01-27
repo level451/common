@@ -16,6 +16,7 @@ udpSocket.on('message', (msg, rinfo) => {
         msg.address = rinfo.address;
         if (msg.messageType) {
             // wait up to one second so everyone doesnt blast the line at once
+            console.log('Udp Message type:', msg.messageType);
             switch (msg.messageType) {
                 case 'discover':
                     setTimeout(function () {
@@ -46,36 +47,29 @@ udpSocket.on('message', (msg, rinfo) => {
                     }
                     break;
                 case 'setChannel':
-                    if (msg.id == localSettings.ServiceInfo.id ) {
-                        console.log('channel set received:',msg.channel);
+                    if (msg.id == localSettings.ServiceInfo.id) {
+                        console.log('channel set received:', msg.channel);
                         localSettings.channel = msg.channel;
                         require('fs').writeFileSync(global.settingsFile, JSON.stringify(localSettings, null, 2));
                         process.exit(100);
-
                     }
                     break;
                 case 'setRXOnly':
-                    if (msg.id == localSettings.ServiceInfo.id ) {
-                        console.log('rxOnly set received:',msg.rxOnly);
+                    if (msg.id == localSettings.ServiceInfo.id) {
+                        console.log('rxOnly set received:', msg.rxOnly);
                         localSettings.rxOnly = msg.rxOnly;
                         require('fs').writeFileSync(global.settingsFile, JSON.stringify(localSettings, null, 2));
                     }
-
                     break;
                 case 'setMidiCueOutput':
-                    if (msg.id == localSettings.ServiceInfo.id ) {
-
-
-                        console.log('Midi Cue Output set received:',msg.midiCueOutput,msg.midiCueOutputType,msg.midiCueOutputDeviceId);
+                    if (msg.id == localSettings.ServiceInfo.id) {
+                        console.log('Midi Cue Output set received:', msg.midiCueOutput, msg.midiCueOutputType, msg.midiCueOutputDeviceId);
                         localSettings.midiCueOutput = msg.rxOmidiCueOutput;
                         localSettings.midiCueOutputType = msg.midiCueOutputType;
                         localSettings.midiCueOutputDeviceId = msg.midiCueOutputDeviceId;
-
                         require('fs').writeFileSync(global.settingsFile, JSON.stringify(localSettings, null, 2));
                     }
-
                     break;
-
                 default:
                     udpSocket.emit(msg.messageType, msg);
             }
@@ -134,8 +128,8 @@ function connectsaNet(startedFromTimer = false) {
             });
             // now that we know the saNet is available
             // start the dhcp server
-           // process.send({type: 'startDHCP'});
-            global.dhcp = require(process.cwd()+'/dhcp.js')
+            // process.send({type: 'startDHCP'});
+            global.dhcp = require(process.cwd() + '/dhcp.js');
             if (startedFromTimer) {
                 // if saNet wasn;t available at startup -
                 // resert the git server so it binds to the saNet adapter
@@ -161,7 +155,7 @@ udpSocket.sendObject = function (data) { // convert to promise?
 udpSocket.discover = async function (systemType = 'ALL') {
     udpSocket.sendObject({messageType: 'discover', systemType: systemType});
 };
-udpSocket.bindHome = async function (id, home, rioInfo, name = id, description = id,channel = 0) {
+udpSocket.bindHome = async function (id, home, rioInfo, name = id, description = id, channel = 0) {
     // this all happens on the cs6 - from the webpage iosetup
     udpSocket.sendObject({messageType: 'bindHome', id: id, home: home, name: name, description: description});
     rioInfo.bonded = true;
@@ -174,22 +168,29 @@ udpSocket.bindHome = async function (id, home, rioInfo, name = id, description =
     global.settings.connectedRios[id] = rioInfo;
     database.updateSettings('system', global.settings);
 };
-udpSocket.setChannel = async function(id,channel = 0){
-    udpSocket.sendObject({messageType: 'setChannel', id: id,channel:channel});
-    global.settings.connectedRios[id].channel  = channel;
+udpSocket.setChannel = async function (id, channel = 0) {
+    udpSocket.sendObject({messageType: 'setChannel', id: id, channel: channel});
+    global.settings.connectedRios[id].localSettings.channel = channel;
     database.updateSettings('system', global.settings);
-}
-udpSocket.setRXOnly = async function(id,rxOnly = false){
-    udpSocket.sendObject({messageType: 'setRXOnly', id: id,rxOnly:rxOnly});
-    global.settings.connectedRios[id].rxOnly  = rxOnly;
+};
+udpSocket.setRXOnly = async function (id, rxOnly = false) {
+    udpSocket.sendObject({messageType: 'setRXOnly', id: id, rxOnly: rxOnly});
+    global.settings.connectedRios[id].localSettings.rxOnly = rxOnly;
     database.updateSettings('system', global.settings);
-}
-udpSocket.setMidiCueOutput = async function(id,midiCueOutput = false,midiCueOutputType = 'All',midiCueOutputDeviceId = 1){
-    udpSocket.sendObject({messageType: 'setMidiCueOutput', midiCueOutput: midiCueOutput,midiCueOutputType:midiCueOutputType,midiCueOutputDeviceId:midiCueOutputDeviceId});
-    global.settings.connectedRios[id].rxOnly  = rxOnly;
+};
+udpSocket.setMidiCueOutput = async function (id, midiCueOutput = false, midiCueOutputType = 'All', midiCueOutputDeviceId = 1) {
+    console.log('@setMidiCueOutput');
+    udpSocket.sendObject({
+        messageType: 'setMidiCueOutput',
+        midiCueOutput: midiCueOutput,
+        midiCueOutputType: midiCueOutputType,
+        midiCueOutputDeviceId: midiCueOutputDeviceId
+    });
+    global.settings.connectedRios[id].localSettings.midiCueOutput = midiCueOutput;
+    global.settings.connectedRios[id].localSettings.midiCueOutputType = midiCueOutputType;
+    global.settings.connectedRios[id].localSettings.midiCueOutputDeviceId = midiCueOutputDeviceId;
     database.updateSettings('system', global.settings);
-}
-
+};
 udpSocket.unbindHome = async function (id) {
     udpSocket.sendObject({messageType: 'unbindHome', id: id});
     delete global.settings.connectedRios[id];
@@ -198,10 +199,9 @@ udpSocket.unbindHome = async function (id) {
 udpSocket.test = async function (...id) {
     return [...id];
 };
-udpSocket.internetIP = function(){
-    return  getIPv4NetworkInterfaces(localSettings.network.internet)
-}
-
+udpSocket.internetIP = function () {
+    return getIPv4NetworkInterfaces(localSettings.network.internet);
+};
 module.exports = udpSocket;
 
 
