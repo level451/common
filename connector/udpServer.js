@@ -16,7 +16,7 @@ udpSocket.on('message', (msg, rinfo) => {
         msg.address = rinfo.address;
         if (msg.messageType) {
             // wait up to one second so everyone doesnt blast the line at once
-            console.log('Udp Message type:', msg.messageType);
+           // console.log('Udp Message type:', msg.messageType);
             switch (msg.messageType) {
                 case 'discover':
                     setTimeout(function () {
@@ -181,6 +181,7 @@ udpSocket.setRXOnly = async function (id, rxOnly = false) {
 udpSocket.setMidiCueOutput = async function (id, midiCueOutput = false, midiCueOutputType = 'All', midiCueOutputDeviceId = 1) {
     console.log('@setMidiCueOutput');
     udpSocket.sendObject({
+        id:id,
         messageType: 'setMidiCueOutput',
         midiCueOutput: midiCueOutput,
         midiCueOutputType: midiCueOutputType,
