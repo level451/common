@@ -60,6 +60,20 @@ udpSocket.on('message', (msg, rinfo) => {
                         localSettings.rxOnly = msg.rxOnly;
                         require('fs').writeFileSync(global.settingsFile, JSON.stringify(localSettings, null, 2));
                     }
+
+                    break;
+                case 'setMidiCueOutput':
+                    if (msg.id == localSettings.ServiceInfo.id ) {
+
+
+                        console.log('Midi Cue Output set received:',msg.midiCueOutput,msg.midiCueOutputType,msg.midiCueOutputDeviceId);
+                        localSettings.midiCueOutput = msg.rxOmidiCueOutput;
+                        localSettings.midiCueOutputType = msg.midiCueOutputType;
+                        localSettings.midiCueOutputDeviceId = msg.midiCueOutputDeviceId;
+
+                        require('fs').writeFileSync(global.settingsFile, JSON.stringify(localSettings, null, 2));
+                    }
+
                     break;
 
                 default:
@@ -167,6 +181,11 @@ udpSocket.setChannel = async function(id,channel = 0){
 }
 udpSocket.setRXOnly = async function(id,rxOnly = false){
     udpSocket.sendObject({messageType: 'setRXOnly', id: id,rxOnly:rxOnly});
+    global.settings.connectedRios[id].rxOnly  = rxOnly;
+    database.updateSettings('system', global.settings);
+}
+udpSocket.setMidiCueOutput = async function(id,midiCueOutput = false,midiCueOutputType = 'All',midiCueOutputDeviceId = 1){
+    udpSocket.sendObject({messageType: 'setMidiCueOutput', midiCueOutput: midiCueOutput,midiCueOutputType:midiCueOutputType,midiCueOutputDeviceId:midiCueOutputDeviceId});
     global.settings.connectedRios[id].rxOnly  = rxOnly;
     database.updateSettings('system', global.settings);
 }
