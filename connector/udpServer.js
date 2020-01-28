@@ -162,7 +162,7 @@ udpSocket.bindHome = async function (id, home, rioInfo, name = id, description =
     rioInfo.localSettings.home = home;
     rioInfo.localSettings.name = name;
     rioInfo.localSettings.description = description;
-    rioInfo.connected == false;
+    rioInfo.connected = false;
     rioInfo.channel = channel;
     delete rioInfo.messageType;
     global.settings.connectedRios[id] = rioInfo;
