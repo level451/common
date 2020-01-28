@@ -64,7 +64,7 @@ udpSocket.on('message', (msg, rinfo) => {
                 case 'setMidiCueOutput':
                     if (msg.id == localSettings.ServiceInfo.id) {
                         console.log('Midi Cue Output set received:', msg.midiCueOutput, msg.midiCueOutputType, msg.midiCueOutputDeviceId);
-                        localSettings.midiCueOutput = msg.rxOmidiCueOutput;
+                        localSettings.midiCueOutput = msg.midiCueOutput;
                         localSettings.midiCueOutputType = msg.midiCueOutputType;
                         localSettings.midiCueOutputDeviceId = msg.midiCueOutputDeviceId;
                         require('fs').writeFileSync(global.settingsFile, JSON.stringify(localSettings, null, 2));
