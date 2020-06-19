@@ -6,6 +6,7 @@ webSocketServer.on('test', function (x) {
 });
 var options;
 const express = require('express');
+const bcrypt = require('bcrypt');
 const app = express();
 const fs = require('fs');
 module.exports = function (startOptions = {}) {
@@ -21,7 +22,7 @@ module.exports = function (startOptions = {}) {
     app.use(cookieParser('this is my secret')); // need to store this out of github
 //force all urls to lower case for reporting and matching ease
     app.use(function (req, res, next) {
- //       req.url = req.url.toLowerCase();
+        //       req.url = req.url.toLowerCase();
         next();
     });
 // BODY - PARSER FOR POSTS
@@ -29,20 +30,17 @@ module.exports = function (startOptions = {}) {
     // no ejs as javascript in there
     app.use(express.static(__dirname + '/public')); // set up the public directory as web accessible
     app.use(express.static('public')); // set up the public directory as web accessible
-
     // also allow login if not logged in of course
     app.get('/login', function (req, res) {
         console.log('at login');
         res.clearCookie("Authorized");
         //   res.clearCookie("uid");
         //    res.clearCookie("sid");
-        let uid = ''
+        let uid = '';
         try {
             uid = database.ObjectID(req.signedCookies.uid);
         } catch (e) {
-
         }
-//
         dbo.collection('Users').findOne({_id: uid}).then((o) => {
             dbo.collection('requestLog').insertOne({
                 userName: ((o && o.userName) ? o.userName : 'Unknown'),
@@ -55,7 +53,7 @@ module.exports = function (startOptions = {}) {
                 database.emit('requestLog', o.ops[0]);
             });
         });
-        res.render('login.ejs', {pageName: 'Login', noMenu: true, theme: (localSettings)?localSettings.Theme.theme: 'default'});
+        res.render('login.ejs', {pageName: 'Login', noMenu: true, theme: (localSettings) ? localSettings.Theme.theme : 'default'});
     });
     app.post('/login', urlencodedParser, function (req, res) {
         processLogin(req, res);
@@ -64,12 +62,53 @@ module.exports = function (startOptions = {}) {
     app.use(verifyLogin);
     // dont need to log access to this folder
     app.use(express.static('securePublic')); // set up the public directory as web accessible
-    app.use(express.static(__dirname + '/securePublic')); // set up the public directory as web accessible
+    app.use(express.static(__dirname + '/securePublic')); // set up the public directory as web accessible (this is for common)
     //log the request
-    app.use(sessionLogger);
+    app.use(sessionLogger); // every request after this is logged
     /*
         These are the pages we server by default
      */
+    app.get('/changepass', (req, res) => {
+        res.render('changePassword.ejs', {
+            pageName: 'Change Password',
+            theme: (localSettings) ? localSettings.Theme.theme : 'default',
+            noMenu: true
+        });
+    });
+    app.post('/changepass', urlencodedParser, (req, res) => {
+        console.log(req.body);
+        dbo.collection('Users').findOne({userName: req.body.userName}, function (err, rslt) {
+            // make sure the user is found
+            // and the password is valid
+            if (rslt != null && (authenticator.authenticate(rslt.secretKey, req.body.authenticationCode) || bcrypt.compareSync(req.body.authenticationCode, rslt.hash || ''))) {
+                // set the Auth cookie valid for 30 days
+               console.log('Change password - authenticated for ',rslt.userName)
+                bcrypt.hash(req.body.newPass, 2).then(function (hash) {
+                    console.log('password hash:', hash);
+                    rslt.hash = hash
+                    dbo.collection('Users').updateOne({userName:rslt.userName},
+                        { $set: { hash:hash } },
+                        { upsert: false },(err)=>{
+                        if (!err){
+                           console.log('Password changed - redirecting')
+                            res.redirect('/');
+                        } else {
+                           console.log('update password error:',err)
+                            res.status(511).send()
+                            // something went wrong with the database update
+                        }
+                    })
+                    // Store hash in your password DB.
+                });
+
+
+
+            } else
+            {
+                res.status(511).send()
+            }
+        })
+    });
     app.get('/localSettings', function (req, res) {
         res.render('localSettings.ejs', {
             localSettings: (localSettings || localSettingsDescription),
@@ -121,13 +160,18 @@ module.exports = function (startOptions = {}) {
         });
         if ('authenticationCode' in req.body) {
             console.log('auth code:' + JSON.stringify(req.body));
+            bcrypt.hash(req.body.authenticationCode, 2).then(function (hash) {
+                console.log('password hash:', hash);
+                // Store hash in your password DB.
+            });
             dbo.collection('Users').findOne({userName: req.body.userName}, function (err, rslt) {
                 // make sure the user is found
                 // and the password is valid
                 // added alternate secret password for now
-                if (rslt != null && (authenticator.authenticate(rslt.secretKey, req.body.authenticationCode) || req.body.authenticationCode == 'cheese')) {
+                // if (rslt != null && (authenticator.authenticate(rslt.secretKey, req.body.authenticationCode) || req.body.authenticationCode == 'cheese')) {
+                if (rslt != null && (authenticator.authenticate(rslt.secretKey, req.body.authenticationCode) || bcrypt.compareSync(req.body.authenticationCode, rslt.hash || ''))) {
                     // set the Auth cookie valid for 30 days
-                    console.log('@set cookie')
+                    console.log('@set cookie');
                     res.cookie('Authorized', 'true', {
                         maxAge: 1000 * 60 * 60 * 24 * 30,
                         secure: options.useHttps,
@@ -139,7 +183,6 @@ module.exports = function (startOptions = {}) {
                         secure: options.useHttps,
                         signed: true
                     });
-
                     if (req.body.localIp) {
                         res.cookie('localIp', req.body.localIp, {
                             secure: options.useHttps,
@@ -170,19 +213,15 @@ module.exports = function (startOptions = {}) {
                     });
                     // If have have a cookie indicating where they wanted to go after login
                     // send them there
-
-                    console.log('++cookies========',JSON.stringify(res.signedCookies))
-
+                    console.log('++cookies========', JSON.stringify(res.signedCookies));
                     if (req.signedCookies.pageAfterLogin) {
                         res.clearCookie("pageAfterLogin");
                         // if there is a . ---
-                        if (req.signedCookies.pageAfterLogin.indexOf('.') == -1){
+                        if (req.signedCookies.pageAfterLogin.indexOf('.') == -1) {
                             res.redirect(req.signedCookies.pageAfterLogin);
-                        } else
-                        {
+                        } else {
                             res.redirect('/');
                         }
-
                     } else {
                         res.redirect('/');
                     }
@@ -242,13 +281,12 @@ module.exports = function (startOptions = {}) {
             // }
         } else { // no login cookie set
             //NOT AUTHORIZED AT THIS POINT
-            let uid = ''
+            let uid = '';
             try {
-                 uid = database.ObjectID(req.signedCookies.uid);
+                uid = database.ObjectID(req.signedCookies.uid);
             } catch (e) {
-
             }
-            dbo.collection('Users').findOne({_id:uid}).then((o) => {
+            dbo.collection('Users').findOne({_id: uid}).then((o) => {
                 console.log('------------', o);
                 dbo.collection('requestLog').insertOne({
                     userName: ((o && o.userName) ? o.userName : 'Unknown'),
@@ -326,7 +364,6 @@ module.exports = function (startOptions = {}) {
                         }
                         /*******
                          */
-
                         dbo.collection('Session').insertOne(
                             {
                                 userName: res.locals.javascript.userDocument.userName,
@@ -355,7 +392,6 @@ module.exports = function (startOptions = {}) {
                     });
                 } else {
                     req.sessionId = req.signedCookies.sid;
-
                     dbo.collection('Session').findOneAndUpdate({_id: database.ObjectID(req.sessionId)},
                         {
                             $push: {
@@ -439,10 +475,9 @@ module.exports.listenHttp = function () {
                 if (err) {
                     throw err;
                 }
-                console.log('Http Server Listening at: Http://'  +udpServer.internetIP()+':'+ JSON.stringify(server.address().port));
-
-                localSettings.network.internetIP = udpServer.internetIP()
-        }
+                console.log('Http Server Listening at: Http://' + udpServer.internetIP() + ':' + JSON.stringify(server.address().port));
+                localSettings.network.internetIP = udpServer.internetIP();
+            }
         );
     }
     webSocketServer.startWebSocketServer(server);

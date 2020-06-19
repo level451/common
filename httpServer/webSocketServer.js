@@ -46,7 +46,7 @@ module.exports.startWebSocketServer = function (server) {
         if (webSocket[ws.id] && ws.systemType != 'RIO') {
             ws.id += '.' + Math.random().toString();
         }
-        console.log('New WebSocket Connection ID:' + ws.id.substring(0, 8) + ' systemType:' + ws.systemType +
+        console.log('New WebSocket Connection ID:' + ((ws.id)?ws.id.substring(0, 8) : '?' + ' systemType:') + ((ws.systemType)?ws.systemType:'?') +
             ' Total Connections: ', wss.clients.size);
         webSocket[ws.id] = ws;
         if (ws.systemType == 'browser') {
@@ -54,8 +54,8 @@ module.exports.startWebSocketServer = function (server) {
             //console.log('Browser Connected - systemType', ws.systemType,ws.id);
         } else {
             webSocketEmitter.emit('connect', {id: ws.id, systemType: ws.systemType});
-              console.log('Rio Connected - systemType & connected', ws.systemType,ws.id,global.settings.connectedRios[ws.id].connected);
             if (ws.systemType == 'RIO'){
+                console.log('Rio Connected - systemType & connected', ws.systemType,ws.id,global.settings.connectedRios[ws.id].connected);
                 settings.connectedRios[ws.id].connected = true;
             }
         }
