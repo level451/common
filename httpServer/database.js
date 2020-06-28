@@ -1,5 +1,13 @@
 const EventEmitter = require('events');
 const database = new EventEmitter();
+database.getUsers = async function (filter ={}) {
+    try {
+        let rslt = await dbo.collection('Users').find(filter).sort({userName: -1}).toArray()
+        return (rslt || {});
+    } catch (e) {
+        console.log(e);
+    }
+};
 database.getRequestLogById = async function (id) {
     try {
         let rslt = await dbo.collection('requestLog').find({_id: database.ObjectID(id)}).toArray();

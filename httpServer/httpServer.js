@@ -65,6 +65,7 @@ module.exports = function (startOptions = {}) {
     app.use(express.static(__dirname + '/securePublic')); // set up the public directory as web accessible (this is for common)
     //log the request
     app.use(sessionLogger); // every request after this is logged
+    // userDocument is avalable now
     /*
         These are the pages we server by default
      */
@@ -110,11 +111,16 @@ module.exports = function (startOptions = {}) {
         })
     });
     app.get('/localSettings', function (req, res) {
-        res.render('localSettings.ejs', {
-            localSettings: (localSettings || localSettingsDescription),
-            pageName: 'Local Machine Settings'
-        });
-    });
+        if ( res.locals.javascript.userDocument.accessLevel > 9){
+            res.render('localSettings.ejs', {
+                localSettings: (localSettings || localSettingsDescription),
+                pageName: 'Local Machine Settings'
+            });
+
+        } else {
+            res.sendStatus(401)
+        }
+      });
     app.post('/localSettings', bodyParser.urlencoded({extended: true}), function (req, res) {
         if (req.body) {
             let settingsObject = JSON.stringify(req.body);
@@ -133,8 +139,12 @@ module.exports = function (startOptions = {}) {
             userDocument: req.userDocument
         });
     });
-
-
+    app.get('/usermanagement',(req,res)=> {
+        res.render('userMgmt.ejs', {
+            pageName: 'User Management',
+            sid: req.sessionId,
+        })
+    })
 // we will pass our 'app' to 'http' server
     function processLogin(req, res) {
 // from the /login POST
@@ -165,6 +175,8 @@ module.exports = function (startOptions = {}) {
                 // Store hash in your password DB.
             });
             dbo.collection('Users').findOne({userName: req.body.userName}, function (err, rslt) {
+                console.log('User Info:',JSON.stringify(rslt,null,4))
+
                 // make sure the user is found
                 // and the password is valid
                 // added alternate secret password for now

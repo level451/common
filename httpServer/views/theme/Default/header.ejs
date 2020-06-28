@@ -4,7 +4,8 @@
 
 <div class="top noselect">
     <hr id="topLine">
-    <img id="hamburger" onclick="openLeftSideMenu()" src="images/hamburger.png">
+    <img id="hamburger" <%=((typeof noMenu === 'boolean' && noMenu == true)?'style=visibility:hidden':'')%> onclick="openLeftSideMenu()" src="images/hamburger.png">
+
     <img id="logo" src="images/logo.png">
     <p id="title"><%= global.systemName %></p>
     <% if (locals.javascript && locals.javascript.settings){ %>
