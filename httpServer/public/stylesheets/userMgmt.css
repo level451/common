@@ -3,8 +3,8 @@ button{
     margin-right:20px;
     border-radius: 3px;
     color: #717171;
-    border-width: 2px;
-    width: 130px;
+    border: 2px solid #4f4f4f;
+    width: 90px;
     height:75px;
     background-color: #d2d2d2;
     font-size: 16px;
