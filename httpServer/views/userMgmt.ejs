@@ -2,10 +2,13 @@
 <%- include("varsToJavascript.ejs") %>
 
 <script type="module" src="/javascripts/userMgmt.js"> </script>
+<script type="text/javascript" src="/javascripts/sweetalert2.js"></script>
+
 <!--
 <link rel="stylesheet" href="./stylesheets/test.css">
 -->
 <link rel="stylesheet" href="./stylesheets/main.css">
+<link rel="stylesheet" href="./stylesheets/userMgmt.css">
 
 <head>
     <title><%=global.systemName +' - ' + pageName%>></title>
@@ -19,6 +22,8 @@
     <select id = 'userListSelect'>
 
     </select>
+<button id ='addUser'>Add User</button>
+
     </div>
 
 

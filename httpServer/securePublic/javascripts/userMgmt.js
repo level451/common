@@ -3,13 +3,12 @@ import * as ws from '/javascripts/websocket.mjs';
 
 ws.startWebsocket(subscribeEvents);
 ws.on('open', function () {
-    console.log('connected to cs6');
+    console.log('Websocket Connected');
 });
 console.log('User Access Level ', userDocument.accessLevel);
 let users = []
 database.once('getUsersAvailable', () => {
     database.getUsers().then(rslt => {
-        console.log(rslt);
         users = rslt;
         //     rslt.forEach((user) => {
         //
@@ -20,7 +19,45 @@ database.once('getUsersAvailable', () => {
     });
 });
 
+window.onload = function(){
+document.getElementById('addUser').onclick = addUser
+}
+function addUser(){
+    console.log('add user')
+    Swal.fire({
+        title: 'Enter New User Login Name.',
+        input: 'text',
+        inputAttributes: {
+            autocapitalize: 'off'
+        },
+        showCancelButton: true,
+        confirmButtonText: 'Create',
+        showLoaderOnConfirm: true,
+        preConfirm: (login) => {
+            return fetch(`//api.github.com/users/${login}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(response.statusText)
+                    }
+                    return response.json()
+                })
+                .catch(error => {
+                    Swal.showValidationMessage(
+                        `Request failed: ${error}`
+                    )
+                })
+        },
+        allowOutsideClick: () => !Swal.isLoading()
+    }).then((result) => {
+        if (result.value) {
+            Swal.fire({
+                title: `${result.value.login}'s avatar`,
+                imageUrl: result.value.avatar_url
+            })
+        }
+    })
 
+}
 function makeUserList() {
     let userListSelect = document.getElementById('userListSelect');
     users.forEach((user) => {
