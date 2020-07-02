@@ -4,7 +4,7 @@ const bcrypt = require('bcrypt');
 
 database.getUsers = async function (filter ={}) {
     try {
-        let rslt = await dbo.collection('Users').find(filter).sort({userName: -1}).toArray()
+        let rslt = await dbo.collection('Users').find(filter).sort({displayName: 1}).toArray()
         return (rslt || {});
     } catch (e) {
         console.log(e);

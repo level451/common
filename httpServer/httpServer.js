@@ -334,9 +334,9 @@ module.exports = function (startOptions = {}) {
                 return;
             }
 
-            console.log('user:',rslt)
+
                 if (rslt.mustChangePassword){
-                console.log('Redir to change pass')
+
                     res.render('changePassword.ejs', {
                         pageName: 'Change Password',
                         theme: (localSettings) ? localSettings.Theme.theme : 'default',

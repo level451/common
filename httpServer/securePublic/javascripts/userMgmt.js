@@ -8,15 +8,7 @@ ws.on('open', function () {
 console.log('User Access Level ', userDocument.accessLevel);
 let users = [];
 database.once('getUsersAvailable', () => {
-    database.getUsers().then(rslt => {
-        users = rslt;
-        //     rslt.forEach((user) => {
-        //
-        //         users[user.userName] = user;
-        //         }
-        //     );
-        makeUserList();
-    });
+    makeUserList();
 });
 window.onload = function () {
     document.getElementById('addUser').onclick = addUser;
@@ -61,8 +53,8 @@ function addUser() {
         {
             title: 'Temporary Password',
             html:
-                '<input id="password" type="password" class="swal2-input" placeholder="Temporary Password">' +
-                '<input id="verifyPassword" type="password" class="swal2-input" placeholder="Verify Password">',
+                '<input id="password" type="password" class="swal2-input" placeholder="Temporary Password autocomplete="off"">' +
+                '<input id="verifyPassword" type="password" class="swal2-input" placeholder="Verify Password" autocomplete="off">',
             focusConfirm: false,
             preConfirm: () => {
                 let pass1 = document.getElementById('password').value;
@@ -76,7 +68,7 @@ function addUser() {
         , {
             title: 'Select Access Level',
             input: 'select',
-            inputOptions: Array.from(Array(userDocument.accessLevel + 1).keys()),
+            inputOptions: Array.from(Array(parseInt(userDocument.accessLevel) + 1).keys()),
             inputPlaceholder: 'Access Level',
             preConfirm: (accessLevel) => {
                 console.log(typeof accessLevel, accessLevel.length);
@@ -88,58 +80,21 @@ function addUser() {
             }
         }
     ]).then((result) => {
-        database.addUsers({
-            userName: result.value[0],
-            displayName: result.value[1],
-            hash:result.value[2],
-            accessLevel: result.value[3]
-        }).then((e)=>{
-            console.log('add rsl',e)
-        });
         if (result.value) {
-            const answers = JSON.stringify(result.value);
-            Swal.fire({
-                title: 'All done!',
-                html: `
-        Your answers:
-        <pre><code>${answers}</code></pre>
-      `,
-                confirmButtonText: 'Lovely!'
-            });
-        }
-    });
-    return;
-    Swal.fire({
-        title: 'Enter New User Login Name.',
-        input: 'text',
-        inputAttributes: {
-            autocapitalize: 'off'
-        },
-        showCancelButton: true,
-        confirmButtonText: 'Create',
-        showLoaderOnConfirm: true,
-        preConfirm: (requestedUserName) => {
-            return database.getUsers({userName: requestedUserName}).then(list => {
-                if (list.length == 0) {
-                    return requestedUserName;
-                } else {
-                    Swal.showValidationMessage(`Login already in use by ${list[0].displayName}`);
-                }
-            });
-        },
-        allowOutsideClick: () => !Swal.isLoading()
-    }).then((requestedUserName) => {
-        if (requestedUserName.value) {
-            Swal.fire({
-                title: `Enter ${requestedUserName.value}'s first and last names`,
-                input: 'text',
-                inputAttributes: {
-                    autocapitalize: 'on'
-                },
-                showCancelButton: true,
-                confirmButtonText: 'Continue',
-            }).then((displayName) => {
-                console.log('dn:', displayName);
+            database.addUsers({
+                userName: result.value[0],
+                displayName: result.value[1],
+                hash: result.value[2],
+                accessLevel: result.value[3],
+                created: new Date(),
+                createdBy: userDocument.userName
+            }).then((e) => {
+                Swal.fire(
+                    'User Added',
+                    'A Password change will be required at first login',
+                    'success'
+                );
+                makeUserList();
             });
         }
     });
@@ -147,12 +102,17 @@ function addUser() {
 
 
 function makeUserList() {
-    let userListSelect = document.getElementById('userListSelect');
-    users.forEach((user) => {
-        let option = document.createElement('option');
-        option.value = user.userName;
-        option.text = user.displayName + ' (' + user.userName + ')';
-        userListSelect.appendChild(option);
+    database.getUsers().then(rslt => {
+        users = rslt;
+        let userListSelect = document.getElementById('userListSelect');
+        userListSelect.parentNode.replaceChild(userListSelect.cloneNode(false),userListSelect) // clears options
+        userListSelect = document.getElementById('userListSelect');
+        users.forEach((user) => {
+            let option = document.createElement('option');
+            option.value = user.userName;
+            option.text = user.displayName + ' (' + user.userName + ')';
+            userListSelect.appendChild(option);
+        });
     });
 }
 
