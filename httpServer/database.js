@@ -95,6 +95,16 @@ database.addUsers = async  function(data){
     }
 console.log('addUsers',data)
 }
+database.deleteUsers = async  function(data){
+    try {
+
+        let rslt = await dbo.collection('Users').remove(data)
+        return rslt
+    } catch (e) {
+        console.log(e);
+    }
+}
+
 database.updateEventLog = async function (data) {
 
     try {

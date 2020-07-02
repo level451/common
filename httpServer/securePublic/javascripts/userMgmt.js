@@ -12,7 +12,34 @@ database.once('getUsersAvailable', () => {
 });
 window.onload = function () {
     document.getElementById('addUser').onclick = addUser;
+    document.getElementById('deleteUser').onclick = deleteUser;
 };
+
+
+function deleteUser() {
+    let userListSelect = document.getElementById('userListSelect');
+    Swal.fire({
+        title: 'Are you sure?',
+        text: `Delete user ${userListSelect.value}`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Delete'
+    }).then((result) => {
+        if (result.value) {
+            database.deleteUsers({userName: userListSelect.value}).then((e) => {
+                console.log(e);
+                Swal.fire(
+                    'Deleted!',
+                    `${userListSelect.value} is deleted.`,
+                    'success'
+                );
+                makeUserList();
+            });
+        }
+    });
+}
 
 
 function addUser() {
@@ -53,7 +80,7 @@ function addUser() {
         {
             title: 'Temporary Password',
             html:
-                '<input id="password" type="password" class="swal2-input" placeholder="Temporary Password autocomplete="off"">' +
+                '<input id="password" type="password" class="swal2-input" placeholder="Temporary Password" autocomplete="off">' +
                 '<input id="verifyPassword" type="password" class="swal2-input" placeholder="Verify Password" autocomplete="off">',
             focusConfirm: false,
             preConfirm: () => {
@@ -105,7 +132,7 @@ function makeUserList() {
     database.getUsers().then(rslt => {
         users = rslt;
         let userListSelect = document.getElementById('userListSelect');
-        userListSelect.parentNode.replaceChild(userListSelect.cloneNode(false),userListSelect) // clears options
+        userListSelect.parentNode.replaceChild(userListSelect.cloneNode(false), userListSelect); // clears options
         userListSelect = document.getElementById('userListSelect');
         users.forEach((user) => {
             let option = document.createElement('option');
