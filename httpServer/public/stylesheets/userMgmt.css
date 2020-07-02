@@ -1,0 +1,20 @@
+button{
+    margin-left:20px;
+    margin-right:20px;
+    border-radius: 3px;
+    color: #4f4f4f;
+    border: 2px solid #4f4f4f;
+    width: 95px;
+    height:40px;
+    background-color: #d2d2d2;
+    font-size: 16px;
+    font-weight: bold;
+    font-family: Helvetica, Arial,sans-serif;
+}
+
+#mainDiv{
+    margin-top:40px;
+    margin-left:auto;
+    margin-right:auto;
+    width:400px;
+}
