@@ -6,7 +6,7 @@ ws.on('open', function () {
     console.log('Websocket Connected');
 });
 console.log('User Access Level ', userDocument.accessLevel);
-let users = []
+let users = [];
 database.once('getUsersAvailable', () => {
     database.getUsers().then(rslt => {
         users = rslt;
@@ -18,12 +18,97 @@ database.once('getUsersAvailable', () => {
         makeUserList();
     });
 });
+window.onload = function () {
+    document.getElementById('addUser').onclick = addUser;
+};
 
-window.onload = function(){
-document.getElementById('addUser').onclick = addUser
-}
-function addUser(){
-    console.log('add user')
+
+function addUser() {
+    console.log('add user');
+    Swal.mixin({
+        confirmButtonText: 'Next &rarr;',
+        showCancelButton: true,
+        progressSteps: ['1', '2', '3', '4']
+    }).queue([
+        {
+            title: 'Enter New User Login Name.',
+            input: 'text',
+            inputAttributes: {
+                autocapitalize: 'off'
+            },
+            showCancelButton: true,
+            confirmButtonText: 'Create',
+            showLoaderOnConfirm: true,
+            preConfirm: (requestedUserName) => {
+                return database.getUsers({userName: requestedUserName}).then(list => {
+                    if (list.length == 0) {
+                        return requestedUserName;
+                    } else {
+                        Swal.showValidationMessage(`Login already in use by ${list[0].displayName}`);
+                    }
+                });
+            },
+            allowOutsideClick: () => !Swal.isLoading()
+        },
+        {
+            title: `Enter First and Last names`,
+            input: 'text',
+            inputAttributes: {
+                autocapitalize: 'on'
+            }
+        }
+        ,
+        {
+            title: 'Temporary Password',
+            html:
+                '<input id="password" type="password" class="swal2-input" placeholder="Temporary Password">' +
+                '<input id="verifyPassword" type="password" class="swal2-input" placeholder="Verify Password">',
+            focusConfirm: false,
+            preConfirm: () => {
+                let pass1 = document.getElementById('password').value;
+                let pass2 = document.getElementById('verifyPassword').value;
+                if (pass1 != pass2) {
+                    Swal.showValidationMessage(`The passwords do not match`);
+                } else
+                    return pass1;
+            }
+        }
+        , {
+            title: 'Select Access Level',
+            input: 'select',
+            inputOptions: Array.from(Array(userDocument.accessLevel + 1).keys()),
+            inputPlaceholder: 'Access Level',
+            preConfirm: (accessLevel) => {
+                console.log(typeof accessLevel, accessLevel.length);
+                if (accessLevel.length == 1) {
+                    return accessLevel;
+                } else {
+                    Swal.showValidationMessage(`Access Level is required`);
+                }
+            }
+        }
+    ]).then((result) => {
+        database.addUsers({
+            userName: result.value[0],
+            displayName: result.value[1],
+            hash:result.value[2],
+            accessLevel: result.value[3]
+        }).then((e)=>{
+            console.log('add rsl',e)
+        });
+        if (result.value) {
+            const answers = JSON.stringify(result.value);
+            Swal.fire({
+                title: 'All done!',
+                html: `
+        Your answers:
+        <pre><code>${answers}</code></pre>
+      `,
+                confirmButtonText: 'Lovely!'
+            });
+        }
+    });
+    return;
     Swal.fire({
         title: 'Enter New User Login Name.',
         input: 'text',
@@ -33,31 +118,34 @@ function addUser(){
         showCancelButton: true,
         confirmButtonText: 'Create',
         showLoaderOnConfirm: true,
-        preConfirm: (login) => {
-            return fetch(`//api.github.com/users/${login}`)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(response.statusText)
-                    }
-                    return response.json()
-                })
-                .catch(error => {
-                    Swal.showValidationMessage(
-                        `Request failed: ${error}`
-                    )
-                })
+        preConfirm: (requestedUserName) => {
+            return database.getUsers({userName: requestedUserName}).then(list => {
+                if (list.length == 0) {
+                    return requestedUserName;
+                } else {
+                    Swal.showValidationMessage(`Login already in use by ${list[0].displayName}`);
+                }
+            });
         },
         allowOutsideClick: () => !Swal.isLoading()
-    }).then((result) => {
-        if (result.value) {
+    }).then((requestedUserName) => {
+        if (requestedUserName.value) {
             Swal.fire({
-                title: `${result.value.login}'s avatar`,
-                imageUrl: result.value.avatar_url
-            })
+                title: `Enter ${requestedUserName.value}'s first and last names`,
+                input: 'text',
+                inputAttributes: {
+                    autocapitalize: 'on'
+                },
+                showCancelButton: true,
+                confirmButtonText: 'Continue',
+            }).then((displayName) => {
+                console.log('dn:', displayName);
+            });
         }
-    })
-
+    });
 }
+
+
 function makeUserList() {
     let userListSelect = document.getElementById('userListSelect');
     users.forEach((user) => {

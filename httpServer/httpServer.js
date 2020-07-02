@@ -63,6 +63,41 @@ module.exports = function (startOptions = {}) {
     // dont need to log access to this folder
     app.use(express.static('securePublic')); // set up the public directory as web accessible
     app.use(express.static(__dirname + '/securePublic')); // set up the public directory as web accessible (this is for common)
+    app.post('/changepass', urlencodedParser, (req, res) => { //this has to happen before the session logger
+        console.log(req.body);
+        dbo.collection('Users').findOne({userName: req.body.userName}, function (err, rslt) {
+            // make sure the user is found
+            // and the password is valid
+            if (rslt != null && (authenticator.authenticate(rslt.secretKey, req.body.authenticationCode) || bcrypt.compareSync(req.body.authenticationCode, rslt.hash || ''))) {
+                // set the Auth cookie valid for 30 days
+                console.log('Change password - authenticated for ',rslt.userName)
+                bcrypt.hash(req.body.newPass, 2).then(function (hash) {
+                    console.log('password hash:', hash);
+                    rslt.hash = hash
+                    dbo.collection('Users').updateOne({userName:rslt.userName},
+                        { $set: { hash:hash ,mustChangePassword:false} },
+                        { upsert: false },(err)=>{
+                            if (!err){
+                                console.log('Password changed - redirecting')
+                                res.redirect('/');
+                            } else {
+                                console.log('update password error:',err)
+                                res.status(511).send()
+                                // something went wrong with the database update
+                            }
+                        })
+                    // Store hash in your password DB.
+                });
+
+
+
+            } else
+            {
+                res.status(511).send()
+            }
+        })
+    });
+
     //log the request
     app.use(sessionLogger); // every request after this is logged
     // userDocument is avalable now
@@ -75,40 +110,6 @@ module.exports = function (startOptions = {}) {
             theme: (localSettings) ? localSettings.Theme.theme : 'default',
             noMenu: true
         });
-    });
-    app.post('/changepass', urlencodedParser, (req, res) => {
-        console.log(req.body);
-        dbo.collection('Users').findOne({userName: req.body.userName}, function (err, rslt) {
-            // make sure the user is found
-            // and the password is valid
-            if (rslt != null && (authenticator.authenticate(rslt.secretKey, req.body.authenticationCode) || bcrypt.compareSync(req.body.authenticationCode, rslt.hash || ''))) {
-                // set the Auth cookie valid for 30 days
-               console.log('Change password - authenticated for ',rslt.userName)
-                bcrypt.hash(req.body.newPass, 2).then(function (hash) {
-                    console.log('password hash:', hash);
-                    rslt.hash = hash
-                    dbo.collection('Users').updateOne({userName:rslt.userName},
-                        { $set: { hash:hash } },
-                        { upsert: false },(err)=>{
-                        if (!err){
-                           console.log('Password changed - redirecting')
-                            res.redirect('/');
-                        } else {
-                           console.log('update password error:',err)
-                            res.status(511).send()
-                            // something went wrong with the database update
-                        }
-                    })
-                    // Store hash in your password DB.
-                });
-
-
-
-            } else
-            {
-                res.status(511).send()
-            }
-        })
     });
     app.get('/localSettings', function (req, res) {
         if ( res.locals.javascript.userDocument.accessLevel > 9){
@@ -331,6 +332,18 @@ module.exports = function (startOptions = {}) {
                 // this also clears all cookies
                 res.redirect('/login');
                 return;
+            }
+
+            console.log('user:',rslt)
+                if (rslt.mustChangePassword){
+                console.log('Redir to change pass')
+                    res.render('changePassword.ejs', {
+                        pageName: 'Change Password',
+                        theme: (localSettings) ? localSettings.Theme.theme : 'default',
+                        noMenu: true
+                    });
+//                res.redirect('/changepass');
+                              return;
             }
             // we are going to attach the user document to the request, so it can be used anywhere
             // but, lets delete the secretKey info

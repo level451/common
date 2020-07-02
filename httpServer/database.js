@@ -1,5 +1,7 @@
 const EventEmitter = require('events');
 const database = new EventEmitter();
+const bcrypt = require('bcrypt');
+
 database.getUsers = async function (filter ={}) {
     try {
         let rslt = await dbo.collection('Users').find(filter).sort({userName: -1}).toArray()
@@ -79,6 +81,20 @@ database.updateSettings = async function (type, data,emitReloadAssembledShowData
         console.log(e);
     }
 };
+database.addUsers = async  function(data){
+    try {
+        data.hash = await bcrypt.hash(data.hash, 2)
+        data.mustChangePassword = true;
+        data.preferences = {
+            webTheme:'default'
+        }
+        let rslt = await dbo.collection('Users').insertOne(data)
+        return rslt
+    } catch (e) {
+        console.log(e);
+    }
+console.log('addUsers',data)
+}
 database.updateEventLog = async function (data) {
 
     try {
