@@ -14,7 +14,7 @@
 }
 
 .loadDiv{
-    height: 500px;
+ /*   height: 500px;
     display: flex;
     flex-direction: row;
     font-weight: bold;
@@ -23,7 +23,7 @@
     justify-content: center;
     padding-top: 20px;
     transition: all .8s;
-    padding-bottom: 0px;
+    padding-bottom: 0px; */
 }
 .loadDiv.expanded {
     height: 0px;
