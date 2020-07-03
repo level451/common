@@ -2,6 +2,13 @@
     -webkit-text-security:disc;
 }
 
+#mainDiv{
+    margin-top:40px;
+    margin-left:auto;
+    margin-right:auto;
+    width:400px;
+}
+
 .addDelete{
 
     margin-left:20px;
@@ -17,9 +24,7 @@
     font-family: Helvetica, Arial,sans-serif;
 }
 
-#mainDiv{
-    margin-top:40px;
-    margin-left:auto;
-    margin-right:auto;
-    width:400px;
+.dropDown{
+    font-size: 16px;
+    font-weight: bold;
 }
