@@ -25,6 +25,7 @@
     padding-top: 20px;
     transition: all .8s;
     padding-bottom: 0px;
+    height: 95px
 }
 .loadDiv.expanded {
     height: 0px;
@@ -56,6 +57,8 @@
     justify-content: center;
     top: 0;
     border: 3px solid #4f4f4f;
+    order-radius: 3px;
+    height: 95px
 }
 
 .dropDownTitle{
