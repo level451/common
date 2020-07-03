@@ -11,7 +11,13 @@
     margin-top:100px;
     display:flex;
     justify-content:center;
-    width:75px;
+    width:120px;
+}
+#addUser{
+    left:0;
+}
+#deleteUser{
+    right:0;
 }
 
 #loadDiv{
