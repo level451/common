@@ -53,6 +53,7 @@
     margin-right:0px;
     display:flex;
     justify-content: center;
+    top: 0;
 }
 
 .dropDownTitle{
@@ -69,5 +70,5 @@
 #info{
     display:flex;
     justify-content:center;
-    top: 0;
+
 }
