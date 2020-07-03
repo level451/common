@@ -20,7 +20,7 @@
     border-radius: 3px;
     color: #4f4f4f;
     border: 2px solid #4f4f4f;
-    width: 95px;
+    width: 120px;
     height:40px;
     background-color: #d2d2d2;
     font-size: 16px;
@@ -31,4 +31,6 @@
 .dropDown{
     font-size: 16px;
     font-weight: bold;
+    margin-top:50px;
+    margin-right:10px;
 }
