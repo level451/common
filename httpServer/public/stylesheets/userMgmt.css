@@ -1,7 +1,7 @@
 #txtPassword{
     -webkit-text-security:disc;
 }
-#buttonDiv{
+#buttonsDiv{
     display:block;
     margin-left:20px;
     margin-right:20px;
