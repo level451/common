@@ -55,6 +55,7 @@
     display:flex;
     justify-content: center;
     top: 0;
+    border: 3px solid #4f4f4f;
 }
 
 .dropDownTitle{
