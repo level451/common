@@ -1,7 +1,8 @@
 #txtPassword{
     -webkit-text-security:disc;
 }
-#buttonsDiv button{
+
+.addDelete{
     display:block;
     margin-left:20px;
     margin-right:20px;
