@@ -55,6 +55,11 @@
     justify-content: center;
 }
 
+.dropDownTitle{
+    display:flex;
+    justify-content: center;
+}
+
 #userListSelect{
     width:175px;
 }
