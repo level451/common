@@ -108,6 +108,17 @@
         margin-bottom:0;
         font-weight: bold;
     }
+
+    #userName{
+        display: inline;
+        float: right;
+        font-size: 30px;
+        color: #717171;
+        margin-top: 30px;
+        padding-right: 25px;
+        margin-bottom: 0;
+        font-weight: bold;
+    }
 }
 
 .top{
