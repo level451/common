@@ -27,6 +27,12 @@
     transition: all .8s;
     padding-bottom: 0px;
 }
+.loadDiv.expanded {
+    height: 0px;
+    overflow: hidden;
+    opacity: 0;
+}
+
 .addDelete{
 
     margin-left:20px;
