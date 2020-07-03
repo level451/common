@@ -51,13 +51,12 @@
 .dropDown{
     font-size: 16px;
     font-weight: bold;
-    margin-top:50px;
     margin-right:0px;
     display:flex;
     justify-content: center;
     top: 0;
     border: 3px solid #4f4f4f;
-    order-radius: 3px;
+    brder-radius: 4px;
     height: 95px
 }
 
