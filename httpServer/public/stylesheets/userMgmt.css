@@ -9,17 +9,17 @@
 
 #userButtons{
     margin-top:100px;
-    display:flex;
-    justify-content:center;
-  /*  width:120px; */
+    /* display:flex;
+     justify-content:center;
+     width:120px; */
 }
 #addUser{
-    left:0;
+    float: left;
     width:120px;
 }
 #deleteUser{
-    right:0;
-    width:120px;
+    float:right;
+    width:100px;
 }
 
 #loadDiv{
