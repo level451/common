@@ -132,6 +132,7 @@ function makeUserList() {
     database.getUsers().then(rslt => {
         users = rslt;
         let userListSelect = document.getElementById('userListSelect');
+        userListSelect.title = "Current Users"
         userListSelect.parentNode.replaceChild(userListSelect.cloneNode(false), userListSelect); // clears options
         userListSelect = document.getElementById('userListSelect');
         users.forEach((user) => {
