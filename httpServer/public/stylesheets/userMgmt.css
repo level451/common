@@ -17,11 +17,13 @@
     float: left;
     width:115px;
     border-radius: 3px;
+    height:50px;
 }
 #deleteUser{
     float:right;
     width:115px;
     border-radius: 3px;
+    height:50px;
 }
 
 #loadDiv{
