@@ -136,7 +136,6 @@ function makeUserList() {
         userListSelect = document.getElementById('userListSelect');
         users.forEach((user) => {
             let option = document.createElement('option');
-            option.label = "Current Users";
             option.value = user.userName;
             option.text = user.displayName + ' (' + user.userName + ')';
             userListSelect.appendChild(option);
