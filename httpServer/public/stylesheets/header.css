@@ -54,11 +54,11 @@
 
     #userName{
         display: inline;
-        float: right;
         color: #717171;
         margin-top: 0px;
         padding-right: 0px;
         margin-bottom: 0;
+        font-size:10px;
         font-weight: bold;
     }
 
