@@ -14,9 +14,10 @@
 }
 
 #loadDiv{
+    width:275px;
     margin-left: auto;
     margin-right: auto;
-    width: 275px;
+
 
 
 }
