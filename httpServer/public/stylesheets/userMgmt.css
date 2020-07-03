@@ -16,10 +16,12 @@
 #addUser{
     float: left;
     width:115px;
+    border-radius: 3px;
 }
 #deleteUser{
     float:right;
     width:115px;
+    border-radius: 3px;
 }
 
 #loadDiv{
@@ -63,7 +65,7 @@
     font-size: 16px;
     font-weight: bold;
     display:flex;
-    margin-bottom: 10px;
+    margin-bottom: 3px;
 
 }
 
