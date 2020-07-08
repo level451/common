@@ -82,6 +82,7 @@
     margin-left:0px;
     background-color: #94bddf;
     border-radius: 3px;
+    border: 2px solid #4f4f4f;
 }
 #uiLegend{
     font-weight: bold;
