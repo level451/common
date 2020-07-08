@@ -56,7 +56,8 @@
     top: 0;
     border: 2px solid #4f4f4f;
     border-radius: 4px;
-    height: 50px
+    height: 50px;
+    color: #4f4f4f;
 }
 
 .dropDownTitle{
@@ -64,7 +65,7 @@
     font-weight: bold;
     display:flex;
     margin-bottom: 3px;
-
+    color: #4f4f4f;
 }
 
 #userListSelect{
