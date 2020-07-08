@@ -77,7 +77,10 @@
     justify-content:center;
 
 }
-
+#userInfo{
+    width:300px;
+    background-color: #6a6c6e;
+}
 #uiLegend{
     font-weight: bold;
 }
