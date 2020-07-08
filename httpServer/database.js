@@ -98,7 +98,7 @@ console.log('addUsers',data)
 database.deleteUsers = async  function(data){
     try {
 
-        let rslt = await dbo.collection('Users').remove(data)
+        let rslt = await dbo.collection('Users').deleteOne(data)
         return rslt
     } catch (e) {
         console.log(e);
