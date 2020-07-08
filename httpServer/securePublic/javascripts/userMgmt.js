@@ -17,9 +17,9 @@ window.onload = function () {
 
 function displayAccessLevel(){
     let userListSelect = document.getElementById('userListSelect');
-    document.getElementById('accessLevel').innerText = window.users[userListSelect.value].accessLevel
-    document.getElementById('createdBy').innerText = window.users[userListSelect.value].createdBy
-    document.getElementById('dateCreated').innerText = new Date(window.users[userListSelect.value].created)
+    document.getElementById('accessLevel').innerText += window.users[userListSelect.value].accessLevel
+    document.getElementById('createdBy').innerText += window.users[userListSelect.value].createdBy
+    document.getElementById('dateCreated').innerText += new Date(window.users[userListSelect.value].created)
 
 }
 function deleteUser() {
