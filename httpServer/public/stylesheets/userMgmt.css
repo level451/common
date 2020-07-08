@@ -78,8 +78,9 @@
 
 }
 #userInfo{
-    width:300px;
-    background-color: #6a6c6e;
+    width:273px;
+    margin-left:0px;
+    background-color: #94bddf;
 }
 #uiLegend{
     font-weight: bold;
