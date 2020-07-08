@@ -17,8 +17,10 @@ window.onload = function () {
 
 function displayAccessLevel(){
     let userListSelect = document.getElementById('userListSelect');
-    console.log('**',userListSelect.value)
     document.getElementById('accessLevel').innerText = window.users[userListSelect.value].accessLevel
+    document.getElementById('createdBy').innerText = window.users[userListSelect.value].createdBy
+    document.getElementById('dateCreated').innerText = new Date(window.users[userListSelect.value].created)
+
 }
 function deleteUser() {
     let userListSelect = document.getElementById('userListSelect');
