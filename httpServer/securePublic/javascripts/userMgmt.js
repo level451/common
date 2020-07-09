@@ -21,7 +21,7 @@ function displayAccessLevel() {
     if (userDocument.accessLevel >= window.users[userListSelect.value].accessLevel) {
         document.getElementById('accessLevel').innerText = "Access Level: " + window.users[userListSelect.value].accessLevel;
     } else {
-        document.getElementById('accessLevel').innerText = '';
+        document.getElementById('accessLevel').innerText = 'Unavailable';
     }
     document.getElementById('createdBy').innerText = "Created By: " + window.users[userListSelect.value].createdBy;
     document.getElementById('dateCreated').innerText = "Date Created: " + (new Date(window.users[userListSelect.value].created)).toString().substring(0, 15);
