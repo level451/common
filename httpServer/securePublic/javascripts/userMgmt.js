@@ -15,13 +15,19 @@ window.onload = function () {
     document.getElementById('deleteUser').onclick = deleteUser;
 };
 
-function displayAccessLevel(){
-    let userListSelect = document.getElementById('userListSelect');
-    document.getElementById('accessLevel').innerText = "Access Level: " + window.users[userListSelect.value].accessLevel
-    document.getElementById('createdBy').innerText = "Created By: " + window.users[userListSelect.value].createdBy
-    document.getElementById('dateCreated').innerText = "Date Created: " + (new Date(window.users[userListSelect.value].created)).toString().substring(0,15);
 
+function displayAccessLevel() {
+    let userListSelect = document.getElementById('userListSelect');
+    if (userDocument.accessLevel >= window.users[userListSelect.value].accessLevel) {
+        document.getElementById('accessLevel').innerText = "Access Level: " + window.users[userListSelect.value].accessLevel;
+    } else {
+        document.getElementById('accessLevel').innerText = '';
+    }
+    document.getElementById('createdBy').innerText = "Created By: " + window.users[userListSelect.value].createdBy;
+    document.getElementById('dateCreated').innerText = "Date Created: " + (new Date(window.users[userListSelect.value].created)).toString().substring(0, 15);
 }
+
+
 function deleteUser() {
     let userListSelect = document.getElementById('userListSelect');
     Swal.fire({
@@ -140,16 +146,16 @@ function makeUserList() {
         let userListSelect = document.getElementById('userListSelect');
         userListSelect.parentNode.replaceChild(userListSelect.cloneNode(false), userListSelect); // clears options
         userListSelect = document.getElementById('userListSelect');
-               for (let i = 0; i < window.users.length; ++i){
+        for (let i = 0; i < window.users.length; ++i) {
             //    users.forEach((user) => {
             let option = document.createElement('option');
             option.value = i;
             option.text = window.users[i].displayName + ' (' + window.users[i].userName + ')';
             userListSelect.appendChild(option);
-        };
+        }
+        ;
         userListSelect.onchange = displayAccessLevel;
         displayAccessLevel();
-
     });
 }
 
