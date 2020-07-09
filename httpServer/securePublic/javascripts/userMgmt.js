@@ -142,7 +142,7 @@ function addUser() {
 
 
 function makeUserList(selectedUser = false) {
-    database.getUsers({},2).then(rslt => { // skip first 2 users / they are hidden
+    database.getUsers().then(rslt => { // skip first 2 users / they are hidden
         window.users = rslt;
         let userListSelect = document.getElementById('userListSelect');
         userListSelect.parentNode.replaceChild(userListSelect.cloneNode(false), userListSelect); // clears options
