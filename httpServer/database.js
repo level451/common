@@ -2,9 +2,9 @@ const EventEmitter = require('events');
 const database = new EventEmitter();
 const bcrypt = require('bcrypt');
 
-database.getUsers = async function (filter ={}) {
+database.getUsers = async function (filter ={},skip = 0) {
     try {
-        let rslt = await dbo.collection('Users').find(filter).sort({displayName: 1}).toArray()
+        let rslt = await dbo.collection('Users').find(filter).skip(skip).sort({displayName: 1}).toArray()
         return (rslt || {});
     } catch (e) {
         console.log(e);

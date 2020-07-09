@@ -300,7 +300,6 @@ module.exports = function (startOptions = {}) {
             } catch (e) {
             }
             dbo.collection('Users').findOne({_id: uid}).then((o) => {
-                console.log('------------', o);
                 dbo.collection('requestLog').insertOne({
                     userName: ((o && o.userName) ? o.userName : 'Unknown'),
                     notAuthorized: true,
