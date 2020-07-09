@@ -119,6 +119,7 @@ function addUser() {
             }
         }
     ]).then((result) => {
+        let newUser = result.value[0];
         if (result.value) {
             database.addUsers({
                 userName: result.value[0],
@@ -133,27 +134,30 @@ function addUser() {
                     'A Password change will be required at first login',
                     'success'
                 );
-                makeUserList();
+                makeUserList(newUser);
             });
         }
     });
 }
 
 
-function makeUserList() {
+function makeUserList(selectedUser = false) {
     database.getUsers().then(rslt => {
         window.users = rslt;
         let userListSelect = document.getElementById('userListSelect');
         userListSelect.parentNode.replaceChild(userListSelect.cloneNode(false), userListSelect); // clears options
-        userListSelect = document.getElementById('userListSelect');
+        userListSelect = document.getElementById('userListSelect'); // userListSelect becomes unbound above
         for (let i = 0; i < window.users.length; ++i) {
             //    users.forEach((user) => {
             let option = document.createElement('option');
             option.value = i;
             option.text = window.users[i].displayName + ' (' + window.users[i].userName + ')';
             userListSelect.appendChild(option);
+            // if a user is passed select that one
+            if (selectedUser && selectedUser == window.users[i].userName) {
+                userListSelect.value = i;
+            }
         }
-        ;
         userListSelect.onchange = displayAccessLevel;
         displayAccessLevel();
     });
