@@ -1,11 +1,10 @@
 const EventEmitter = require('events');
 const database = new EventEmitter();
 const bcrypt = require('bcrypt');
-
-database.getUsers = async function (filter ={}) {
-    filter.hidden = {$ne:true}
+database.getUsers = async function (filter = {}) {
+    filter.hidden = {$ne: true};
     try {
-        let rslt = await dbo.collection('Users').find(filter).sort({displayName: 1}).toArray()
+        let rslt = await dbo.collection('Users').find(filter).sort({displayName: 1}).toArray();
         return (rslt || {});
     } catch (e) {
         console.log(e);
@@ -54,72 +53,64 @@ database.getRequestLogDistinct = async function (fields = '', filter = {}) {
 database.getSettings = async function (type = 'system') {
     try {
         let rslt = await dbo.collection('settings').find({type: type}).project({_id: 0, type: 0}).toArray();
-   //     console.log(rslt[0], rslt, type);
+        //     console.log(rslt[0], rslt, type);
         return (rslt[0] || {});
     } catch (e) {
         console.log(e);
     }
 };
-database.updateSettings = async function (type, data,emitReloadAssembledShowData = false) {
+database.updateSettings = async function (type, data, emitReloadAssembledShowData = false) {
     try {
         let rslt = await dbo.collection('settings').findOneAndUpdate({type: type},
-            {$set: data}, {upsert: true,returnOriginal:false});
-        if (type == 'system'){
-            if (global.settings.showName != rslt.value.showName){
-                database.emit('showNameChange',rslt.value.showName)
+            {$set: data}, {upsert: true, returnOriginal: false});
+        if (type == 'system') {
+            if (global.settings.showName != rslt.value.showName) {
+                database.emit('showNameChange', rslt.value.showName);
             }
-            global.settings = rslt.value
-
-
+            global.settings = rslt.value;
         }
-
-        if (emitReloadAssembledShowData){
-            database.emit('reloadAssembledShowData')
+        if (emitReloadAssembledShowData) {
+            database.emit('reloadAssembledShowData');
         }
         return rslt;
-
     } catch (e) {
         console.log(e);
     }
 };
-database.addUsers = async  function(data){
+database.addUsers = async function (data) {
     try {
-        data.hash = await bcrypt.hash(data.hash, 2)
+        data.hash = await bcrypt.hash(data.hash, 2);
         data.mustChangePassword = true;
         data.preferences = {
-            webTheme:'default'
-        }
-        let rslt = await dbo.collection('Users').insertOne(data)
-        return rslt
+            webTheme: 'default'
+        };
+        let rslt = await dbo.collection('Users').insertOne(data);
+        return rslt;
     } catch (e) {
         console.log(e);
     }
-console.log('addUsers',data)
-}
-database.deleteUsers = async  function(data){
-    try {
-
-        let rslt = await dbo.collection('Users').deleteOne(data)
-        return rslt
-    } catch (e) {
-        console.log(e);
-    }
-}
-
-database.updateEventLog = async function (data) {
-
-    try {
-
-        let rslt = await dbo.collection('eventLog').insertOne(data)
-    } catch (e) {
-        console.log(e);
-    }
-    database.emit('newEventLogEntry',data)
+    console.log('addUsers', data);
 };
-database.getEventLog = async function (limit = 1000, skip = 0,filter = {},newestFirst = false) {
-   // console.log(filter);
+database.deleteUsers = async function (data) {
     try {
-        let rslt = await dbo.collection('eventLog').find(filter).limit(limit).skip(skip).project({}).sort({_id:(newestFirst)?-1:1}).toArray();
+        let rslt = await dbo.collection('Users').deleteOne(data);
+        return rslt;
+    } catch (e) {
+        console.log(e);
+    }
+};
+database.updateEventLog = async function (data) {
+    try {
+        let rslt = await dbo.collection('eventLog').insertOne(data);
+    } catch (e) {
+        console.log(e);
+    }
+    database.emit('newEventLogEntry', data);
+};
+database.getEventLog = async function (limit = 1000, skip = 0, filter = {}, newestFirst = false) {
+    // console.log(filter);
+    try {
+        let rslt = await dbo.collection('eventLog').find(filter).limit(limit).skip(skip).project({}).sort({_id: (newestFirst) ? -1 : 1}).toArray();
         return rslt;
     } catch (e) {
         console.log(e);
@@ -145,7 +136,7 @@ var client;
 // Use connect method to connect to the server
 module.exports.getMongoConnection = function (databaseName, requiredCollections) {
     return new Promise(function (resolve, reject) {
-        MongoClient.connect(url, {useNewUrlParser: true, useUnifiedTopology: true }).then((client) => {
+        MongoClient.connect(url, {useNewUrlParser: true, useUnifiedTopology: true}).then((client) => {
             checkIfCollectionsExist(client.db(databaseName));
             clearSystemInfoConnectionState(client.db(databaseName)); // reset the connection state of everything connected on restart
             resolve(client.db(databaseName));
