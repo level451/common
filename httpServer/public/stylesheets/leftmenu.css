@@ -49,6 +49,11 @@
     font-size: 36px;
     margin-left: 50px;
 }
+.isDisabled{
+    cursor: not-allowed;
+    opacity: 0.3;
+}
+
 @media screen and (max-width:750px) {
     .sidenav {
         margin-top: 106px;
