@@ -26,6 +26,7 @@ function createGlobalEmitterObjectAsncyFunctions(d) {
             // return a promise to be fulfilled when we get the data back
             return new Promise(function (resolve, reject) {
                 window[d.emitterName].once(returnEventName, function (args) {
+
                     if (args.reject) {
                         reject(args.args);
                     } else {

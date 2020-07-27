@@ -140,7 +140,7 @@ module.exports.startWebSocketServer = function (server) {
                             reject: true,
                             emitter: obj.emitterName,
                             eventName: obj.returnEventName,
-                            args: args
+                            args: args.toString()
                         }));
                     });
                 } else {
