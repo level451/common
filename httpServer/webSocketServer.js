@@ -46,7 +46,7 @@ module.exports.startWebSocketServer = function (server) {
         if (webSocket[ws.id] && ws.systemType != 'RIO') {
             ws.id += '.' + Math.random().toString();
         }
-        console.log('New WebSocket Connection ID:' + ((ws.id)?ws.id.substring(0, 8) : '?' + ' systemType:') + ((ws.systemType)?ws.systemType:'?') +
+        console.log('New WebSocket Connection ID:' + ((ws.id) ? ws.id.substring(0, 8) : '?' + ' systemType:') + ' ' + ((ws.systemType) ? ws.systemType : '?') +
             ' Total Connections: ', wss.clients.size);
         webSocket[ws.id] = ws;
         if (ws.systemType == 'browser') {
@@ -54,13 +54,13 @@ module.exports.startWebSocketServer = function (server) {
             //console.log('Browser Connected - systemType', ws.systemType,ws.id);
         } else {
             webSocketEmitter.emit('connect', {id: ws.id, systemType: ws.systemType});
-            if (ws.systemType == 'RIO'){
-                console.log('Rio Connected - systemType & connected', ws.systemType,ws.id,global.settings.connectedRios[ws.id].connected);
+            if (ws.systemType == 'RIO') {
+                console.log('Rio Connected - systemType & connected', ws.systemType, ws.id, global.settings.connectedRios[ws.id].connected);
                 settings.connectedRios[ws.id].connected = true;
             }
         }
         ws.on('message', function incoming(message) {
-           // console.log(message)
+         //    console.log(message)
             try {
                 var obj = JSON.parse(message);
             } catch (e) {
@@ -172,9 +172,11 @@ module.exports.startWebSocketServer = function (server) {
                     }
                 }
             } else {
-                // no other case applies emit the data to be processed elseware
+                // no other case applies emit the data to be processed elsewhere
                 if (obj.emit) {
-                    webSocketEmitter.emit(obj.emit, obj,ws);
+                    webSocketEmitter.emit(obj.emit, obj, ws);
+                } else {
+                    webSocketEmitter.emit('message', obj, ws);
                 }
             }
         });
@@ -486,3 +488,7 @@ webSocketEmitter.on('browserClose', (id, connectTime) => {
 webSocketEmitter.getConnetions = async function (unitType = 'all') {
     return unitType;
 };
+webSocketEmitter.send = function(id,data) {
+
+    webSocket[id].send(JSON.stringify(data))
+}

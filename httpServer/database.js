@@ -124,12 +124,14 @@ const MongoClient = require('mongodb').MongoClient;
 module.exports.ObjectID = require('mongodb').ObjectID;
 //const assert = require('assert');
 // Connection URL
-if (!localSettings) {
-    console.log('WARNING - localSetting not found attempting to connect with default settings');
-    var url = 'mongodb://' + localSettingsDescription.MongoServer.Address + ':27017';
-    console.log('url', url);
+let url
+if (localSettings && localSettings.MongoServer && localSettings.MongoServer.Address) {
+     url = 'mongodb://' + localSettings.MongoServer.Address + ':27017';
+
 } else {
-    var url = 'mongodb://' + localSettings.MongoServer.Address + ':27017';
+    console.log('Database URL not found in localSettingsDescription.MongoServer.Address using localhost');
+     url = 'mongodb://' + localSettingsDescription.MongoServer.Address + ':27017';
+    console.log('url', url);
 }
 var client;
 // Database Name
