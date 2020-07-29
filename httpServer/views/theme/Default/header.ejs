@@ -16,7 +16,9 @@
     <br>
     <% if (locals.javascript && locals.javascript.userDocument ){ %>
     <div id="userName"> <%= global.localSettings.ServiceInfo.id + ' - ' +locals.javascript.userDocument.displayName%></div>
-    <% } %>
+    <% } else if (id){%>
+        <div id="userName"> <%= id%></div>
+    <%}%>
     <br>
     <hr id="bottomLine">
 </div>

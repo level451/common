@@ -64,7 +64,7 @@ database.updateSettings = async function (type, data, emitReloadAssembledShowDat
         let rslt = await dbo.collection('settings').findOneAndUpdate({type: type},
             {$set: data}, {upsert: true, returnOriginal: false});
         if (type == 'system') {
-            if (global.settings.showName != rslt.value.showName) {
+            if (global.settings && global.settings.showName != rslt.value.showName) {
                 database.emit('showNameChange', rslt.value.showName);
             }
             global.settings = rslt.value;
@@ -124,13 +124,12 @@ const MongoClient = require('mongodb').MongoClient;
 module.exports.ObjectID = require('mongodb').ObjectID;
 //const assert = require('assert');
 // Connection URL
-let url
+let url;
 if (localSettings && localSettings.MongoServer && localSettings.MongoServer.Address) {
-     url = 'mongodb://' + localSettings.MongoServer.Address + ':27017';
-
+    url = 'mongodb://' + localSettings.MongoServer.Address + ':27017';
 } else {
     console.log('Database URL not found in localSettingsDescription.MongoServer.Address using localhost');
-     url = 'mongodb://' + localSettingsDescription.MongoServer.Address + ':27017';
+    url = 'mongodb://' + localSettingsDescription.MongoServer.Address + ':27017';
     console.log('url', url);
 }
 var client;

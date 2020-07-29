@@ -60,7 +60,7 @@ module.exports.startWebSocketServer = function (server) {
             }
         }
         ws.on('message', function incoming(message) {
-         //    console.log(message)
+            //    console.log(message)
             try {
                 var obj = JSON.parse(message);
             } catch (e) {
@@ -90,6 +90,7 @@ module.exports.startWebSocketServer = function (server) {
                     if (typeof (obj.args[0]) == 'object' && obj.args[0] != null) {
                         obj.args[0].timeStamp = new Date();
                     }
+                    console.log('eventName', obj.eventName);
                     global[obj.emitter].emit(obj.eventName, ...obj.args);
                 } else {
                     global[obj.emitter] = new EventEmitter();
@@ -240,7 +241,9 @@ function subscribeEvents(ws) {
         // check to see is the object we are tring to subscribe to is an eventEmitter && we are not already subscribed
         //console.log('type', subscribeObject, typeof global[subscribeObject]);
         //global[subscribeObject] instanceof require("events").EventEmitter
-        if ((typeof global[subscribeObject] == 'object' || typeof global[subscribeObject] == 'function') && typeof (ws.subscribeEvents[i].function) != 'function') {
+        // removed global // 7/28/2020
+        // if ((typeof global[subscribeObject] == 'object' || typeof global[subscribeObject] == 'function') && typeof (ws.subscribeEvents[i].function) != 'function') {
+        if ((typeof [subscribeObject] == 'object' || typeof [subscribeObject] == 'function') && typeof (ws.subscribeEvents[i].function) != 'function') {
             // wow this took forever to learn the syntax
             // global[subscribeObject] is the eventemitter object we are subscribing to
             // after we subscribe we are using bind so the function has access to the
@@ -485,10 +488,15 @@ webSocketEmitter.on('browserClose', (id, connectTime) => {
             console.log('Error updating session', e);
         });
 });
-webSocketEmitter.getConnetions = async function (unitType = 'all') {
-    return unitType;
+webSocketEmitter.getConnections = async function (systemType = 'all') {
+    let systems = {};
+    Object.keys(webSocket).forEach((id) => {
+        if (webSocket[id].systemType == systemType || systemType == 'all') {
+            systems[id] = webSocket[id].systemType;
+        }
+    });
+    return systems;
 };
-webSocketEmitter.send = function(id,data) {
-
-    webSocket[id].send(JSON.stringify(data))
-}
+webSocketEmitter.send = function (id, data) {
+    webSocket[id].send(JSON.stringify(data));
+};

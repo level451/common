@@ -53,7 +53,11 @@ module.exports = function (startOptions = {}) {
                 database.emit('requestLog', o.ops[0]);
             });
         });
-        res.render('login.ejs', {pageName: 'Login', noMenu: true, theme: (localSettings && localSettings.Theme) ? localSettings.Theme.theme : 'default'});
+        res.render('login.ejs', {
+            pageName: 'Login',
+            noMenu: true,
+            theme: (localSettings && localSettings.Theme) ? localSettings.Theme.theme : 'default',
+        id:(localSettings && localSettings.ServiceInfo) ? localSettings.ServiceInfo.id : '?'});
     });
     app.post('/login', urlencodedParser, function (req, res) {
         processLogin(req, res);
