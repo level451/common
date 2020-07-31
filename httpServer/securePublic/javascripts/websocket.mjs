@@ -31,6 +31,7 @@ wss.onmessage = function (evt) {
             if (obj.reject) { // reject the promise with an error
                 window[obj.emitter].emit(obj.eventName, obj);
             } else {
+              debugger
                console.log('remote emmit',obj.eventName,obj.args)
                 if (obj.args) {
                     window[obj.emitter].emit(obj.eventName, obj.args);
