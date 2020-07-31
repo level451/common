@@ -31,10 +31,12 @@ wss.onmessage = function (evt) {
             if (obj.reject) { // reject the promise with an error
                 window[obj.emitter].emit(obj.eventName, obj);
             } else {
+               console.log('remote emmit',obj.eventName,obj.args)
                 if (obj.args) {
                     window[obj.emitter].emit(obj.eventName, obj.args);
                 } else {
                     window[obj.emitter].emit(obj.eventName, '');
+
                 }
             }
         } else if (obj.emitterDefinition) {
@@ -47,8 +49,8 @@ wss.onmessage = function (evt) {
         } else if (obj.logOut) {
             window.location.href = '/login';
         } else {
-              this.emit('message', obj);
-           // console.log('??', obj);
+            this.emit('message', obj);
+            // console.log('??', obj);
         }
     } catch (e) {
         //this.emit('message', evt.data);
@@ -84,7 +86,6 @@ function startWebsocket(subscribeEvents = {}) {
 
 
 function sendObject(d) {
-
     if (wss.readyState == 1) {
         try {
             wss.send(JSON.stringify(d));

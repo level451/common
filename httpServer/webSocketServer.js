@@ -90,8 +90,9 @@ module.exports.startWebSocketServer = function (server) {
                     if (typeof (obj.args[0]) == 'object' && obj.args[0] != null) {
                         obj.args[0].timeStamp = new Date();
                     }
-                    console.log('eventName', obj.eventName);
-                    global[obj.emitter].emit(obj.eventName, ...obj.args);
+                    console.log('eventName', obj.eventName,obj.args);
+
+                    global[obj.emitter].emit(obj.eventName, obj.args);
                 } else {
                     global[obj.emitter] = new EventEmitter();
                     console.trace('New emiter created - should not happen now', obj.emitter);
@@ -242,16 +243,19 @@ function subscribeEvents(ws) {
         //console.log('type', subscribeObject, typeof global[subscribeObject]);
         //global[subscribeObject] instanceof require("events").EventEmitter
         // removed global // 7/28/2020
-        // if ((typeof global[subscribeObject] == 'object' || typeof global[subscribeObject] == 'function') && typeof (ws.subscribeEvents[i].function) != 'function') {
-        if ((typeof [subscribeObject] == 'object' || typeof [subscribeObject] == 'function') && typeof (ws.subscribeEvents[i].function) != 'function') {
+         if ((typeof global[subscribeObject] == 'object' || typeof global[subscribeObject] == 'function') && typeof (ws.subscribeEvents[i].function) != 'function') {
+        //if ((typeof [subscribeObject] == 'object' || typeof [subscribeObject] == 'function') && typeof (ws.subscribeEvents[i].function) != 'function') {
             // wow this took forever to learn the syntax
             // global[subscribeObject] is the eventemitter object we are subscribing to
             // after we subscribe we are using bind so the function has access to the
             // event the was subscribe to and the websocket to send it to
             // store the function name so we can unsuscribe later
-            ws.subscribeEvents[i].function = function (args) {
+
+            ws.subscribeEvents[i].function = function (...args) {
                 if (this.ws.readyState == 1) {
                     try {
+                        console.log('sending to web :',this.eventName,args)
+
                         this.ws.send(JSON.stringify({
                             remoteEmit: true,
                             emitter: this.emitter,
@@ -266,6 +270,7 @@ function subscribeEvents(ws) {
                 }
             }.bind({emitter: subscribeObject, eventName: ws.subscribeEvents[i][subscribeObject], ws: ws});
             // subscribe with the emietter.on to the saved function
+
             global[subscribeObject].on(ws.subscribeEvents[i][subscribeObject], ws.subscribeEvents[i].function);
 //*****
             // send the object definition data to the remote
@@ -300,7 +305,7 @@ function subscribeEvents(ws) {
                 //       console.log('Already Bound Websocket ' + ws.id + ' to event ' + ws.subscribeEvents[i][subscribeObject] + ' in object:' + subscribeObject)
             } else {
                 // no emitter of this type are available
-                //  console.log('FAILED to bind Bound Websocket ' + ws.id + ' to event ' + ws.subscribeEvents[i][subscribeObject] + ' in object:' + subscribeObject + ' NOT an Event Emitter');
+                  console.log('FAILED to bind Bound Websocket ' + ws.id + ' to event ' + ws.subscribeEvents[i][subscribeObject] + ' in object:' + subscribeObject + ' NOT an Event Emitter');
             }
         }
     }
