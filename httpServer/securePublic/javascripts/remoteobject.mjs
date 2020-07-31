@@ -15,7 +15,7 @@ function createGlobalEmitterObjectAsncyFunctions(d) {
       //fix this
         window[d.emitterName][functionToCreate] = async function (...args) {
 
-            debugger
+
             // create a random event to subscribe to - to await the return value
             var returnEventName = Math.random().toString();
             //console.log('Return event :'+ functionToCreate+' Once Event Name'+returnEventName)
