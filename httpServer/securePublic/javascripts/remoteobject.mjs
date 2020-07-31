@@ -11,7 +11,7 @@ function createGlobalEmitterObjectAsncyFunctions(d) {
         let functionToCreate = d.asyncFunctions[i];
         console.log(`Creating function ${d.emitterName}:${functionToCreate}`);
         // this is the return hook function
-        window[d.emitterName][functionToCreate] = async function (...args) {
+        window[d.emitterName][functionToCreate] = async function (args) {
             // create a random event to subscribe to - to await the return value
             var returnEventName = Math.random().toString();
             //console.log('Return event :'+ functionToCreate+' Once Event Name'+returnEventName)
