@@ -90,8 +90,7 @@ module.exports.startWebSocketServer = function (server) {
                     if (typeof (obj.args[0]) == 'object' && obj.args[0] != null) {
                         obj.args[0].timeStamp = new Date();
                     }
-                   // console.log('eventName', obj.eventName,obj.args);
-
+                    console.log('eventName', obj.eventName,obj.args);
                     global[obj.emitter].emit(obj.eventName, obj.args);
                 } else {
                     global[obj.emitter] = new EventEmitter();
@@ -250,8 +249,8 @@ function subscribeEvents(ws) {
             // after we subscribe we are using bind so the function has access to the
             // event the was subscribe to and the websocket to send it to
             // store the function name so we can unsuscribe later
-
-            ws.subscribeEvents[i].function = function (...args) {
+//fix it here
+            ws.subscribeEvents[i].function = function (args) {
                 if (this.ws.readyState == 1) {
                     try {
                         console.log('sending to web :',this.eventName,args)

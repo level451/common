@@ -1,6 +1,9 @@
 const EventEmitter = require('events');
 const database = new EventEmitter();
 const bcrypt = require('bcrypt');
+database.test = async function(x){
+    database.updateEventLog({id: localSettings.ServiceInfo.id, class: 'System', type: 'test', systemType: 'CS6', data: x, timeStamp: new Date()});
+}
 database.getUsers = async function (filter = {}) {
     filter.hidden = {$ne: true};
     try {
