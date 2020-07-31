@@ -86,6 +86,7 @@ function startWebsocket(subscribeEvents = {}) {
 
 
 function sendObject(d) {
+    console.log(d)
     if (wss.readyState == 1) {
         try {
             wss.send(JSON.stringify(d));

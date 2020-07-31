@@ -90,7 +90,7 @@ module.exports.startWebSocketServer = function (server) {
                     if (typeof (obj.args[0]) == 'object' && obj.args[0] != null) {
                         obj.args[0].timeStamp = new Date();
                     }
-                    console.log('eventName', obj.eventName,obj.args);
+                   // console.log('eventName', obj.eventName,obj.args);
 
                     global[obj.emitter].emit(obj.eventName, obj.args);
                 } else {
@@ -503,5 +503,6 @@ webSocketEmitter.getConnections = async function (systemType = 'all') {
     return systems;
 };
 webSocketEmitter.send = function (id, data) {
+   console.log('sebd-------------------------',data)
     webSocket[id].send(JSON.stringify(data));
 };
