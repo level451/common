@@ -177,13 +177,13 @@ function send(objectToSend) {
 module.exports.remoteEmit = remoteEmit;
 
 
-function remoteEmit(emitter, eventName, ...args) {
+function remoteEmit(emitter, eventName, args) {
     // sends the emitted event to the obj clone on the remote
     if (ws.readyState == 1) {
         //console.log(eventName)
         try {
             ws.send(JSON.stringify({remoteEmit: true, emitter: emitter, eventName: eventName, args: args}));
-            //console.log('emitter',emitter,eventName,args)
+            console.log('emitter',emitter,eventName,args)
         } catch (e) {
             console.log('send failure:', e);
         }

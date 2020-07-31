@@ -87,12 +87,15 @@ module.exports.startWebSocketServer = function (server) {
                 if (global[obj.emitter] instanceof require("events").EventEmitter) {
                     // it's an emitter - emit the message
                     //global[obj.emitter].emit(obj.eventName, ...obj.args);
+                    //7/31/2020 updated remoteemit so it sends the object correctly
                     if (typeof (obj.args[0]) == 'object' && obj.args[0] != null) {
                         obj.args[0].timeStamp = new Date();
                     }
-                    console.log('eventName', obj.eventName,obj);
+                    if (typeof (obj.args) == 'object' && obj.args != null) {
+                        obj.args.timeStamp = new Date();
+                    }
+                    console.log('Websock emitter eventName', obj.eventName,obj);
                     global[obj.emitter].emit(obj.eventName, obj.args);
-                    console.log('-------------- websocket emitter',obj)
                 } else {
                     global[obj.emitter] = new EventEmitter();
                     console.trace('New emiter created - should not happen now', obj.emitter);
@@ -128,7 +131,7 @@ module.exports.startWebSocketServer = function (server) {
                     //fix it
                     global[obj.emitterName][obj.functionName](...obj.args).then(function (args) {
                         // here I got the data back
-                        console.log('Data returned from remote async function', obj, ws.id,args);
+                    //    console.log('Data returned from remote async function', obj, ws.id,args);
                         // send the data back to me and fulfill the promise
                         ws.send(JSON.stringify({
                             remoteEmit: true,
@@ -243,9 +246,10 @@ function subscribeEvents(ws) {
         // check to see is the object we are tring to subscribe to is an eventEmitter && we are not already subscribed
         //console.log('type', subscribeObject, typeof global[subscribeObject]);
         //global[subscribeObject] instanceof require("events").EventEmitter
-        // removed global // 7/28/2020
-        // if ((typeof global[subscribeObject] == 'object' || typeof global[subscribeObject] == 'function') && typeof (ws.subscribeEvents[i].function) != 'function') {
-        if ((typeof [subscribeObject] == 'object' || typeof [subscribeObject] == 'function') && typeof (ws.subscribeEvents[i].function) != 'function') {
+
+         if ((typeof global[subscribeObject] == 'object' || typeof global[subscribeObject] == 'function') && typeof (ws.subscribeEvents[i].function) != 'function') {
+
+             //if ((typeof [subscribeObject] == 'object' || typeof [subscribeObject] == 'function') && typeof (ws.subscribeEvents[i].function) != 'function') {
             // wow this took forever to learn the syntax
             // global[subscribeObject] is the eventemitter object we are subscribing to
             // after we subscribe we are using bind so the function has access to the
