@@ -124,7 +124,8 @@ module.exports.startWebSocketServer = function (server) {
                 }
                 if (global[obj.emitterName]) {
 //                    global[obj.emitterName][obj.functionName](...obj.args).then(function (...args) {
-                    global[obj.emitterName][obj.functionName](...obj.args).then(function (args) {
+                    //fix it
+                    global[obj.emitterName][obj.functionName](obj.args).then(function (args) {
                         // here I got the data back
                         //console.log('Data returned from remote async function', obj, ws.id,args);
                         // send the data back to me and fulfill the promise
