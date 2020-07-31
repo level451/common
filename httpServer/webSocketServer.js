@@ -101,7 +101,7 @@ module.exports.startWebSocketServer = function (server) {
                             subscribeEvents(webSocket[each]);
                         }
                     }
-                    global[obj.emitter].emit(obj.eventName, ...obj.args);
+                    global[obj.emitter].emit(obj.eventName, obj.args);
                 }
             } else if (obj.remoteAsyncFunction) {
                 // call to an Asyncfunction from the remote
