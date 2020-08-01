@@ -88,9 +88,9 @@ module.exports.startWebSocketServer = function (server) {
                     // it's an emitter - emit the message
                     //global[obj.emitter].emit(obj.eventName, ...obj.args);
                     //7/31/2020 updated remoteemit so it sends the object correctly
-                    if (typeof (obj.args[0]) == 'object' && obj.args[0] != null) {
-                        obj.args[0].timeStamp = new Date();
-                    }
+                    // if (typeof (obj.args[0]) == 'object' && obj.args[0] != null) {
+                    //     obj.args[0].timeStamp = new Date();
+                    // }
                     if (typeof (obj.args) == 'object' && obj.args != null) {
                         obj.args.timeStamp = new Date();
                     }
