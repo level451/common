@@ -31,6 +31,17 @@ module.exports = function (startOptions = {}) {
     app.use(express.static(__dirname + '/public')); // set up the public directory as web accessible
     app.use(express.static('public')); // set up the public directory as web accessible
     // also allow login if not logged in of course
+    app.post('/github', bodyParser.json(), (req, res) => { // allow for github rest api
+        try {
+            app.emit('github', {
+                repository: req.body.repository.name,
+                info: req.body
+            });
+        } catch (e) {
+            console.log('github parse error', e, req.body);
+        }
+        res.status(200).send();
+    });
     app.get('/login', function (req, res) {
         console.log('at login');
         res.clearCookie("Authorized");
@@ -57,7 +68,8 @@ module.exports = function (startOptions = {}) {
             pageName: 'Login',
             noMenu: true,
             theme: (localSettings && localSettings.Theme) ? localSettings.Theme.theme : 'default',
-        id:(localSettings && localSettings.ServiceInfo) ? localSettings.ServiceInfo.id : '?'});
+            id: (localSettings && localSettings.ServiceInfo) ? localSettings.ServiceInfo.id : '?'
+        });
     });
     app.post('/login', urlencodedParser, function (req, res) {
         processLogin(req, res);
@@ -74,34 +86,29 @@ module.exports = function (startOptions = {}) {
             // and the password is valid
             if (rslt != null && (authenticator.authenticate(rslt.secretKey, req.body.authenticationCode) || bcrypt.compareSync(req.body.authenticationCode, rslt.hash || ''))) {
                 // set the Auth cookie valid for 30 days
-                console.log('Change password - authenticated for ',rslt.userName)
+                console.log('Change password - authenticated for ', rslt.userName);
                 bcrypt.hash(req.body.newPass, 2).then(function (hash) {
                     console.log('password hash:', hash);
-                    rslt.hash = hash
-                    dbo.collection('Users').updateOne({userName:rslt.userName},
-                        { $set: { hash:hash ,mustChangePassword:false} },
-                        { upsert: false },(err)=>{
-                            if (!err){
-                                console.log('Password changed - redirecting')
+                    rslt.hash = hash;
+                    dbo.collection('Users').updateOne({userName: rslt.userName},
+                        {$set: {hash: hash, mustChangePassword: false}},
+                        {upsert: false}, (err) => {
+                            if (!err) {
+                                console.log('Password changed - redirecting');
                                 res.redirect('/');
                             } else {
-                                console.log('update password error:',err)
-                                res.status(511).send()
+                                console.log('update password error:', err);
+                                res.status(511).send();
                                 // something went wrong with the database update
                             }
-                        })
+                        });
                     // Store hash in your password DB.
                 });
-
-
-
-            } else
-            {
-                res.status(511).send()
+            } else {
+                res.status(511).send();
             }
-        })
+        });
     });
-
     //log the request
     app.use(sessionLogger); // every request after this is logged
     // userDocument is avalable now
@@ -116,16 +123,15 @@ module.exports = function (startOptions = {}) {
         });
     });
     app.get('/localSettings', function (req, res) {
-        if ( res.locals.javascript.userDocument.accessLevel > 9){
+        if (res.locals.javascript.userDocument.accessLevel > 9) {
             res.render('localSettings.ejs', {
                 localSettings: (localSettings || localSettingsDescription),
                 pageName: 'Local Machine Settings'
             });
-
         } else {
-            res.sendStatus(401)
+            res.sendStatus(401);
         }
-      });
+    });
     app.post('/localSettings', bodyParser.urlencoded({extended: true}), function (req, res) {
         if (req.body) {
             let settingsObject = JSON.stringify(req.body);
@@ -144,12 +150,14 @@ module.exports = function (startOptions = {}) {
             userDocument: req.userDocument
         });
     });
-    app.get('/usermanagement',(req,res)=> {
+    app.get('/usermanagement', (req, res) => {
         res.render('userMgmt.ejs', {
             pageName: 'User Management',
             sid: req.sessionId,
-        })
-    })
+        });
+    });
+
+
 // we will pass our 'app' to 'http' server
     function processLogin(req, res) {
 // from the /login POST
@@ -180,8 +188,7 @@ module.exports = function (startOptions = {}) {
                 // Store hash in your password DB.
             });
             dbo.collection('Users').findOne({userName: req.body.userName}, function (err, rslt) {
-                console.log('User Info:',JSON.stringify(rslt,null,4))
-
+                console.log('User Info:', JSON.stringify(rslt, null, 4));
                 // make sure the user is found
                 // and the password is valid
                 // added alternate secret password for now
@@ -336,17 +343,14 @@ module.exports = function (startOptions = {}) {
                 res.redirect('/login');
                 return;
             }
-
-
-                if (rslt.mustChangePassword){
-
-                    res.render('changePassword.ejs', {
-                        pageName: 'Change Password',
-                        theme: (localSettings) ? localSettings.Theme.theme : 'default',
-                        noMenu: true
-                    });
+            if (rslt.mustChangePassword) {
+                res.render('changePassword.ejs', {
+                    pageName: 'Change Password',
+                    theme: (localSettings) ? localSettings.Theme.theme : 'default',
+                    noMenu: true
+                });
 //                res.redirect('/changepass');
-                              return;
+                return;
             }
             // we are going to attach the user document to the request, so it can be used anywhere
             // but, lets delete the secretKey info
