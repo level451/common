@@ -35,7 +35,9 @@ module.exports = function (startOptions = {}) {
         try {
             app.emit('github', {
                 repository: req.body.repository.name,
+                event:req.header('X-GitHub-Event'),
                 info: req.body
+
             });
         } catch (e) {
             console.log('github parse error', e, req.body);
