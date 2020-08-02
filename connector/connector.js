@@ -14,6 +14,8 @@ wscEmitter.id = '';
 * */
 let connectionParameters = {};
 module.exports = wscEmitter;
+module.exports.ipcPartent = require('./ipcParent')
+
 module.exports.udpServer = udpServer;
 var ws = {};
 var sid;

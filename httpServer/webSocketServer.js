@@ -71,6 +71,7 @@ module.exports.startWebSocketServer = function (server) {
                 ws.subscribeEvents = obj.eventsToSubscribeTo;
                 subscribeEvents(ws);
             } else if (obj.updateLocalSettings) {
+                // from rios - localsettings contains the cs6 parent info
                 console.log('localsettingsupdate');
                 global.settings.connectedRios[ws.id].localSettings = obj.localSettings;
                 database.updateSettings('system', global.settings);
