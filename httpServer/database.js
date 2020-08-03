@@ -70,6 +70,7 @@ database.updateSettings = async function (type, data, emitReloadAssembledShowDat
             if (global.settings && global.settings.showName != rslt.value.showName) {
                 database.emit('showNameChange', rslt.value.showName);
             }
+            database.emit('systemSettingsUpdated',rslt.value)
             global.settings = rslt.value;
         }
         if (emitReloadAssembledShowData) {
