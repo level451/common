@@ -67,16 +67,12 @@ database.updateSettings = async function (type, data, emitReloadAssembledShowDat
         let rslt = await dbo.collection('settings').findOneAndUpdate({type: type},
             {$set: data}, {upsert: true, returnOriginal: false});
         if (type == 'system') {
+            //special case where settings is updated from webpage and showname is changed
             if (global.settings && global.settings.showName != rslt.value.showName) {
                 database.emit('showNameChange', rslt.value.showName);
                 global.settings = rslt.value;
             }
             database.emit('systemSettingsUpdated', rslt.value);
-            //who knows what this will screw up -
-            // when settings are updated via webpage - this will insure the global settings
-            // is updated 8/3/2020 Todd
-           // global.settings = rslt.value;
-             //console.log('updated settigns',settings)
         }
         if (emitReloadAssembledShowData) {
             database.emit('reloadAssembledShowData');
