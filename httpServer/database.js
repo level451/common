@@ -75,7 +75,7 @@ database.updateSettings = async function (type, data, emitReloadAssembledShowDat
             //who knows what this will screw up -
             // when settings are updated via webpage - this will insure the global settings
             // is updated 8/3/2020 Todd
-            global.settings = rslt.value;
+           // global.settings = rslt.value;
              //console.log('updated settigns',settings)
         }
         if (emitReloadAssembledShowData) {
