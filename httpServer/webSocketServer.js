@@ -210,9 +210,9 @@ module.exports.startWebSocketServer = function (server) {
                 console.log('WARNING: websocket closing and is not found as connected', ws.id);
             }
             if (ws.systemType == 'browser') {
-                webSocketEmitter.emit('browserClose', ws.id, ws.connectTime);
+                webSocketEmitter.emit('browserClose', {id:ws.id, connectTime:ws.connectTime,connections:wss.clients.size,systemType: ws.systemType});
             } else {
-                webSocketEmitter.emit('close', {id: ws.id, systemType: ws.systemType});
+                webSocketEmitter.emit('close', {id: ws.id, systemType: ws.systemType,connections:wss.clients.size});
             }
         });
     });
@@ -478,7 +478,9 @@ webSocketEmitter.on('browserConnect', (id) => {
             console.log('Error updating session', e);
         });
 });
-webSocketEmitter.on('browserClose', (id, connectTime) => {
+webSocketEmitter.on('browserClose', (info) => {
+    let id = info.id;
+    let connectTime = info.connectTime;
     id = id.split('.'); // id[0] is sessionId & id[1] is requestId
     //console.log('-----------------------++++++++++++++++++++++emit disconnect', id);
     dbo.collection('requestLog').findOneAndUpdate({_id: database.ObjectID(id[1])},
