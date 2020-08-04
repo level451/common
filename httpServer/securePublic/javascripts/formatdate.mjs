@@ -1,7 +1,7 @@
 export function toMMDDHHMMSS(inDate) {
     let d = new Date(inDate);
-    if (isNan(d)){
-        return ' Invalid Date',d
+    if (isNan(d)) {
+        return ' Invalid Date', d;
     }
     return padl(d.getMonth() + 1) + '/' + padl(d.getDate()) + ' ' + padl(d.getHours()) + ':' + padl(d.getMinutes()) + ':' + padl(d.getSeconds());
 }
@@ -9,8 +9,8 @@ export function toMMDDHHMMSS(inDate) {
 
 export function toMMDDHHMMSSMS(inDate) {
     let d = new Date(inDate);
-    if (isNan(d)){
-        return ' Invalid Date',d
+    if (isNan(d)) {
+        return ' Invalid Date', d;
     }
     return padl(d.getMonth() + 1) + '/' + padl(d.getDate()) + ' ' + padl(d.getHours()) + ':' + padl(d.getMinutes()) + ':' + padl(d.getSeconds()) + '.' + padl(d.getMilliseconds());
 }
@@ -18,8 +18,8 @@ export function toMMDDHHMMSSMS(inDate) {
 
 export function toHHMMSS(inDate) {
     let d = new Date(inDate);
-    if (isNan(d)){
-        return ' Invalid Date',d
+    if (isNan(d)) {
+        return ' Invalid Date', d;
     }
     return padl(d.getHours()) + ':' + padl(d.getMinutes()) + ':' + padl(d.getSeconds());
 }
@@ -27,8 +27,8 @@ export function toHHMMSS(inDate) {
 
 export function toMMDDHHMM(inDate) {
     let d = new Date(inDate);
-    if (isNan(d)){
-        return ' Invalid Date',d
+    if (isNan(d)) {
+        return ' Invalid Date', d;
     }
     return padl(d.getMonth() + 1) + '/' + padl(d.getDate()) + ' ' + padl(d.getHours()) + ':' + padl(d.getMinutes());
 }
@@ -36,8 +36,8 @@ export function toMMDDHHMM(inDate) {
 
 export function toMMDD(inDate) {
     let d = new Date(inDate);
-    if (isNan(d)){
-        return ' Invalid Date',d
+    if (isNan(d)) {
+        return ' Invalid Date', d;
     }
     return padl(d.getMonth() + 1) + '/' + padl(d.getDate());
 }
