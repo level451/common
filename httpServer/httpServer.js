@@ -526,7 +526,7 @@ function mcAutoLogin(req, res, next) {
     // with the quesystrings sent the cs6 will try to login without a password as long as the userName is a cs6 user
     // this allows masterconsole users to login without a password as long as they are logged into the master console
     // check to see if we should autoLogin - from master console
-    if (req.query.masterconsole) {
+    if (req.query.masterconsole && !req.signedCookies.Authorized) {
         console.log('Auto Login from masterconsole');
         if (req.query.hash == global.mcLoginHash) {
             console.log('Hash check passed');
@@ -536,23 +536,29 @@ function mcAutoLogin(req, res, next) {
                 // added alternate secret password for now
                 // if (rslt != null && (authenticator.authenticate(rslt.secretKey, req.body.authenticationCode) || req.body.authenticationCode == 'cheese')) {
                 if (rslt != null) {
-                    console.log('User check passed User Info:', JSON.stringify(rslt, null, 4));
+                    console.log('User check passed User Info:', rslt.userName);
                     // set the Auth cookie valid for 30 days
-                    console.log('@set cookie');
-                    res.cookie('Authorized', 'true', {
-                        maxAge: 1000 * 60 * 60 * 24 * 30,
-                        secure: options.useHttps,
-                        signed: true
-                    });
-                    req.signedCookies.Authorized = true; // this lets the cookie be read before it is set
-                    // also set the userid cookie
-                    res.cookie('uid', rslt._id, {
-                        maxAge: 1000 * 60 * 60 * 24 * 365,
-                        secure: options.useHttps,
-                        signed: true
-                    });
-                    req.signedCookies.uid = rslt._id; // this lets the cookie be read before it is set
-                    // the ip comes from  a script in the login page - it wont work here
+                    try {
+                        res.cookie('Authorized', 'true', {
+                            maxAge: 1000 * 60 * 60 * 24 * 30,
+                            secure: options.useHttps,
+                            signed: true
+                        });
+                        req.signedCookies.Authorized = true; // this lets the cookie be read before it is set
+                        // also set the userid cookie
+                        res.cookie('uid', rslt._id, {
+                            maxAge: 1000 * 60 * 60 * 24 * 365,
+                            secure: options.useHttps,
+                            signed: true
+                        });
+                        req.signedCookies.uid = rslt._id; // this lets the cookie be read before it is set
+                        console.log('Cookies set');
+
+                    }catch(e){
+                        console.log('Set cookie error from mc bypass',e)
+                    }
+
+                        // the ip comes from  a script in the login page - it wont work here
                     // if (req.body && req.body.localIp) {
                     //     res.cookie('localIp', req.body.localIp, {
                     //         secure: options.useHttps,
@@ -572,6 +578,8 @@ function mcAutoLogin(req, res, next) {
                     //next()
                 }
             });
+        } else {
+            console.log('hash check failed',req.query.hash, global.mcLoginHash)
         }
     }
     global.mcLoginHash = false; // clear the hash - it can so it can only be used once
