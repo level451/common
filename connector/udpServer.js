@@ -165,6 +165,7 @@ udpSocket.bindHome = async function (id, home, rioInfo, name = id, description =
     rioInfo.connected = false;
     rioInfo.channel = channel;
     delete rioInfo.messageType;
+    delete rioInfo.data; // dont need this in settings
     global.settings.connectedRios[id] = rioInfo;
     database.updateSettings('system', global.settings);
 };

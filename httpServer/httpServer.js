@@ -28,6 +28,7 @@ module.exports = function (startOptions = {}) {
 // BODY - PARSER FOR POSTS
     // allow to loggin in to access the public folder
     // no ejs as javascript in there
+    app.use(mcAutoLogin); // see function for comments
     app.use(express.static(__dirname + '/public')); // set up the public directory as web accessible
     app.use(express.static('public')); // set up the public directory as web accessible
     // also allow login if not logged in of course
@@ -35,9 +36,8 @@ module.exports = function (startOptions = {}) {
         try {
             app.emit('github', {
                 repository: req.body.repository.name,
-                event:req.header('X-GitHub-Event'),
+                event: req.header('X-GitHub-Event'),
                 info: req.body
-
             });
         } catch (e) {
             console.log('github parse error', e, req.body);
@@ -173,16 +173,16 @@ module.exports = function (startOptions = {}) {
 //         dbo.collection('Users').findOne({_id:uid}).then((o) => {
 //         });
         req.localIp = req.body.localIp;
-        res.cookie('test', 'true', {
-            maxAge: 1000 * 60 * 60 * 24 * 30,
-            secure: options.useHttps,
-            signed: true
-        });
-        res.cookie('Authorized', 'true', {
-            maxAge: 1000 * 60 * 60 * 24 * 30,
-            secure: options.useHttps,
-            signed: true
-        });
+        // res.cookie('test', 'true', {
+        //     maxAge: 1000 * 60 * 60 * 24 * 30,
+        //     secure: options.useHttps,
+        //     signed: true
+        // });
+        // res.cookie('Authorized', 'true', {
+        //     maxAge: 1000 * 60 * 60 * 24 * 30,
+        //     secure: options.useHttps,
+        //     signed: true
+        // });
         if ('authenticationCode' in req.body) {
             console.log('auth code:' + JSON.stringify(req.body));
             bcrypt.hash(req.body.authenticationCode, 2).then(function (hash) {
@@ -516,3 +516,65 @@ module.exports.listenHttp = function () {
     }
     webSocketServer.startWebSocketServer(server);
 };
+
+
+function mcAutoLogin(req, res, next) {
+    // this function checks for the query string masterconsole if it is there
+    // it will auto login with the querystring username and hash the hash is obtained from the function
+    //MCEmitter.mcLoginHash in masterconsole connector of cs6 and is called from home.js in masterconsole
+    // as with this command    rCs6.local(id,'mcc','mcLoginHash').then((hash)=>{
+    // with the quesystrings sent the cs6 will try to login without a password as long as the userName is a cs6 user
+    // this allows masterconsole users to login without a password as long as they are logged into the master console
+    // check to see if we should autoLogin - from master console
+    if (req.query.masterconsole) {
+        console.log('Auto Login from masterconsole');
+        if (req.query.hash == global.mcLoginHash) {
+            console.log('Hash check passed');
+            dbo.collection('Users').findOne({userName: req.query.user}, function (err, rslt) {
+                // make sure the user is found
+                // and the password is valid
+                // added alternate secret password for now
+                // if (rslt != null && (authenticator.authenticate(rslt.secretKey, req.body.authenticationCode) || req.body.authenticationCode == 'cheese')) {
+                if (rslt != null) {
+                    console.log('User check passed User Info:', JSON.stringify(rslt, null, 4));
+                    // set the Auth cookie valid for 30 days
+                    console.log('@set cookie');
+                    res.cookie('Authorized', 'true', {
+                        maxAge: 1000 * 60 * 60 * 24 * 30,
+                        secure: options.useHttps,
+                        signed: true
+                    });
+                    req.signedCookies.Authorized = true; // this lets the cookie be read before it is set
+                    // also set the userid cookie
+                    res.cookie('uid', rslt._id, {
+                        maxAge: 1000 * 60 * 60 * 24 * 365,
+                        secure: options.useHttps,
+                        signed: true
+                    });
+                    req.signedCookies.uid = rslt._id; // this lets the cookie be read before it is set
+                    // the ip comes from  a script in the login page - it wont work here
+                    // if (req.body && req.body.localIp) {
+                    //     res.cookie('localIp', req.body.localIp, {
+                    //         secure: options.useHttps,
+                    //         signed: true
+                    //     });
+                    // }
+                    if (req.signedCookies.sid) {
+                        // there is an existing sid - lets mark it closed and clear the cookie
+                        dbo.collection('Session').updateOne({_id: database.ObjectID(req.signedCookies.sid)},
+                            {
+                                $set: {
+                                    closed: true
+                                }
+                            });
+                        res.clearCookie('sid');
+                    }
+                    //next()
+                }
+            });
+        }
+    }
+    global.mcLoginHash = false; // clear the hash - it can so it can only be used once
+    next();
+    //
+}

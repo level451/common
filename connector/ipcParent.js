@@ -16,7 +16,7 @@ module.exports.send = function (type, data) {
                 resolve(data);
                 if (type === 'startNgrok' || type ==='stopNgrok'){
                     this.ngrokUrl = data;
-                   // mcc.emit('clientInfo',{type,data})
+                    mcc.emit('clientInfo',{nGrokStatus:data})
                 }
             }
         });
