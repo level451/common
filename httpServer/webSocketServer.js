@@ -49,6 +49,7 @@ module.exports.startWebSocketServer = function (server) {
         console.log('New WebSocket Connection ID:' + ((ws.id) ? ws.id.substring(0, 8) : '?' + ' systemType:') + ' ' + ((ws.systemType) ? ws.systemType : '?') +
             ' Total Connections: ', wss.clients.size);
         webSocket[ws.id] = ws;
+        webSocket[ws.id] = ws;
         if (ws.systemType == 'browser') {
             webSocketEmitter.emit('browserConnect', ws.id);
             //console.log('Browser Connected - systemType', ws.systemType,ws.id);

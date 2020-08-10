@@ -20,6 +20,8 @@ module.exports = function (startOptions = {}) {
     app.set('views', [process.cwd() + '/views', __dirname + '/views']);
     // express knows to look for ejs becease the ejs package is installed
     app.use(cookieParser('this is my secret')); // need to store this out of github
+    app.use(mcAutoLogin); // see function for comments
+
 //force all urls to lower case for reporting and matching ease
     app.use(function (req, res, next) {
         //       req.url = req.url.toLowerCase();
@@ -28,7 +30,6 @@ module.exports = function (startOptions = {}) {
 // BODY - PARSER FOR POSTS
     // allow to loggin in to access the public folder
     // no ejs as javascript in there
-    app.use(mcAutoLogin); // see function for comments
     app.use(express.static(__dirname + '/public')); // set up the public directory as web accessible
     app.use(express.static('public')); // set up the public directory as web accessible
     // also allow login if not logged in of course
@@ -544,19 +545,21 @@ function mcAutoLogin(req, res, next) {
                             secure: options.useHttps,
                             signed: true
                         });
-                        req.signedCookies.Authorized = true; // this lets the cookie be read before it is set
+
                         // also set the userid cookie
                         res.cookie('uid', rslt._id, {
                             maxAge: 1000 * 60 * 60 * 24 * 365,
                             secure: options.useHttps,
                             signed: true
                         });
-                        req.signedCookies.uid = rslt._id; // this lets the cookie be read before it is set
                         console.log('Cookies set');
 
                     }catch(e){
                         console.log('Set cookie error from mc bypass',e)
                     }
+                    req.signedCookies.Authorized = true; // this lets the cookie be read before it is set
+                    req.signedCookies.uid = rslt._id; // this lets the cookie be read before it is set
+
 
                         // the ip comes from  a script in the login page - it wont work here
                     // if (req.body && req.body.localIp) {
