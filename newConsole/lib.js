@@ -5,7 +5,7 @@ const util = require('util');
 const exec = util.promisify(require('child_process').exec);
 
 
-async function gitInfo(repository = './') {
+async function gitInfo(repository = '/') {
     repository = process.cwd() + repository;
     let rslt = {};
     let selectedBranch;
