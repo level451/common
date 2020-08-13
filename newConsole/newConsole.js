@@ -18,6 +18,7 @@ util = require("util");
 //
 const oldconsole = console;
 module.exports = {
+    lib : require('./lib'),
     log: function () {
         Error.stackTraceLimit = 2;
         let stackInfo = Error().stack.split('\n');
