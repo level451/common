@@ -35,7 +35,7 @@ async function gitInfo(repository = '/') {
             version: await getPackageJsonVersion(details[0]),
             author: details[1],
             timeStamp: new Date(details[2] * 1000),
-            info: details[3],
+            info: details.slice(3).join('\n'),
             hash: details[0]
         };
     }

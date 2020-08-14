@@ -61,7 +61,7 @@ module.exports.startWebSocketServer = function (server) {
             }
         }
         ws.on('message', function incoming(message) {
-            //    console.log(message)
+                console.log(message)
             try {
                 var obj = JSON.parse(message);
             } catch (e) {
@@ -77,7 +77,7 @@ module.exports.startWebSocketServer = function (server) {
                 global.settings.connectedRios[ws.id].localSettings = obj.localSettings;
                 database.updateSettings('system', global.settings);
             } else if (obj.emitterDefinition) {
-                // emitterDefinition now includes localsettings
+                // emitterDefinition now includes localsettings - this happens at each connect
                 if (obj.localSettings && global.settings && global.settings.connectedRios[ws.id]) {
                     //     console.log('Emitter Definition from',ws.id)
                     global.settings.connectedRios[ws.id].localSettings = obj.localSettings;
