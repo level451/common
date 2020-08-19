@@ -9,7 +9,7 @@ async function gitInfo(repository = '/') {
     repository = process.cwd() + repository;
     let rslt = {};
     let selectedBranch;
-    updateCommand = 'git -C ' + repository + ' branch';
+    updateCommand = 'git -C "' + repository + '" branch';
     const {stderr, stdout} = await exec(updateCommand);
     let lines = stdout.split('\n');
     for (let i = 0; i < lines.length - 1; ++i) {
@@ -23,7 +23,7 @@ async function gitInfo(repository = '/') {
 
 
     async function getPackageJsonVersion(hash) {
-        let {stderr, stdout} = await exec('git -C ' + repository + ' show ' + hash + ':package.json');
+        let {stderr, stdout} = await exec('git -C "' + repository + '" show ' + hash + ':package.json');
         return JSON.parse(stdout).version;
     }
 
