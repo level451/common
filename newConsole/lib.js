@@ -29,7 +29,7 @@ async function gitInfo(repository = '/') {
 
 
     for (const branch in rslt) {
-        let {stderr, stdout} = await exec('git -C ' + repository + ' log -1 ' + branch + ' --pretty="format:%h%n%an (%ae)%n%at%n%b%B"');
+        let {stderr, stdout} = await exec('git -C "' + repository + "' log -1 ' + branch + ' --pretty="format:%h%n%an (%ae)%n%at%n%b%B"');
         let details = stdout.split('\n');
         rslt[branch] = {
             version: await getPackageJsonVersion(details[0]),

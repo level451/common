@@ -61,7 +61,7 @@ module.exports.startWebSocketServer = function (server) {
             }
         }
         ws.on('message', function incoming(message) {
-                console.log(message)
+               // console.log(message)
             try {
                 var obj = JSON.parse(message);
             } catch (e) {
