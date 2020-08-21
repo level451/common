@@ -31,7 +31,7 @@ wss.onmessage = function (evt) {
             if (obj.reject) { // reject the promise with an error
                 window[obj.emitter].emit(obj.eventName, obj);
             } else {
-               console.log('remote emmit',obj.eventName,obj.args)
+//               console.log('remote emmit',obj.eventName,obj.args)
                 if (obj.args) {
                     window[obj.emitter].emit(obj.eventName, obj.args);
                 } else {
@@ -80,7 +80,7 @@ function startWebsocket(subscribeEvents = {}) {
 
     wss.onopen = function () {
         wss.emit('open');
-        console.log('websocket open');
+      //  console.log('websocket open');
         subscribeToRemoteObjects(subscribeEvents);
     };
 }

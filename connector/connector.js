@@ -175,7 +175,8 @@ function send(objectToSend) {
     }
 }
 
-+
+
+module.exports.remoteEmit = remoteEmit;
 
 
 function remoteEmit(emitter, eventName, args) {
