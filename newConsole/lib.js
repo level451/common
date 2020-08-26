@@ -1,5 +1,9 @@
 module.exports = {
-    gitInfo
+    gitInfo,
+    JSON: {
+        bufferParse,
+        bufferStringify
+    }
 };
 const util = require('util');
 const exec = util.promisify(require('child_process').exec);
@@ -49,4 +53,35 @@ async function gitInfo(repository = '/') {
         repository: rslt
     };
     console.log(rslt, selectedBranch);
+}
+
+
+function bufferStringify(json) {
+ //console.log('here',json)
+    if ((json.args instanceof Buffer) == false) {
+        try {
+            return JSON.stringify(json);
+        } catch (e) {
+            return "";
+        }
+    }
+    let jsonString = JSON.stringify(json, (a, b) => {
+        return (a == 'args') ? undefined : b;
+    }); // dont put buffer stringified json
+    return Buffer.concat([Buffer.from(Uint16Array.from([jsonString.length]).buffer), Buffer.from(jsonString), json.args]);
+}
+
+
+function bufferParse(buffer) {
+// first 2 in buffer are
+    if ((buffer instanceof Buffer) == false) {
+        try {
+            return JSON.parse(buffer);
+        } catch (e) {
+            console.log('Failed to parse:',e,buffer)
+
+            return {};
+        }
+    }
+    return {...JSON.parse(buffer.slice(2, buffer.readUInt16LE(0) + 2).toString()), args: buffer.slice(buffer.readInt16LE(0) + 2)};//,
 }
