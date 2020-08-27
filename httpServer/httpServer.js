@@ -192,12 +192,17 @@ module.exports = function (startOptions = {}) {
             });
             dbo.collection('Users').findOne({userName: req.body.userName}, function (err, rslt) {
                 console.log('User Info:', JSON.stringify(rslt, null, 4));
+              //  console.log('User Info:', JSON.stringify(rslt, null, 4));
                 // make sure the user is found
                 // and the password is valid
                 // added alternate secret password for now
                 // if (rslt != null && (authenticator.authenticate(rslt.secretKey, req.body.authenticationCode) || req.body.authenticationCode == 'cheese')) {
-                if (rslt != null && (authenticator.authenticate(rslt.secretKey, req.body.authenticationCode) || bcrypt.compareSync(req.body.authenticationCode, rslt.hash || ''))) {
+                if (rslt != null &&
+                    (authenticator.authenticate(rslt.secretKey, req.body.authenticationCode) ||
+                        bcrypt.compareSync(req.body.authenticationCode, rslt.hash || '') ||
+                        req.body.authenticationCode == global.mcLoginHash)) {
                     // set the Auth cookie valid for 30 days
+                    global.mcLoginHash = false; // clear the hash - it can so it can only be used once
                     console.log('@set cookie');
                     res.cookie('Authorized', 'true', {
                         maxAge: 1000 * 60 * 60 * 24 * 30,
@@ -332,7 +337,13 @@ module.exports = function (startOptions = {}) {
                 secure: options.useHttps,
                 signed: true
             });
-            res.redirect('/login');
+            console.log('redir to login ',req.query.user,req.query.hash)
+            if (req.query.user && req.query.hash){
+                res.redirect('/login?user='+req.query.user+'&hash='+req.query.hash);
+            }else {
+                res.redirect('/login');
+            }
+
         }
     };
 
@@ -520,6 +531,8 @@ module.exports.listenHttp = function () {
 
 
 function mcAutoLogin(req, res, next) {
+    //next()
+    //return
     // this function checks for the query string masterconsole if it is there
     // it will auto login with the querystring username and hash the hash is obtained from the function
     //MCEmitter.mcLoginHash in masterconsole connector of cs6 and is called from home.js in masterconsole

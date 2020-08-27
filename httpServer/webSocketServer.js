@@ -2,6 +2,7 @@ const lib = require('../newConsole').lib;
 const EventEmitter = require('events');
 const webSocketEmitter = new EventEmitter();
 const database = require('./database');
+const fs = require('fs')
 //class MyEmitter extends EventEmitter {}
 module.exports = webSocketEmitter;
 var webSocket = {};
@@ -15,7 +16,7 @@ module.exports.startWebSocketServer = function (server) {
         ws.id = parameters.id;
         ws.stream = (parameters.stream) ? true : false;
         if (ws.stream) {
-            const duplex = WebSock.createWebSocketStream(ws, {encoding: 'utf8'});
+
             console.log('stream connect--');
             // global.test = duplex
             ws.on('pong', heartbeat);
@@ -26,10 +27,19 @@ module.exports.startWebSocketServer = function (server) {
                 console.log('stream sock close');
             });
             ws.once('message', (m) => {
+                const duplex = WebSock.createWebSocketStream(ws);
                 console.log('message once', m);
-                ws.send(JSON.stringify({ready: true}), () => {
-                    duplex.pipe(process.stdout);
-                });
+                //ws.send(JSON.stringify({ready: true}), () => {
+                   setTimeout(()=>{
+                    console.log('piped:')
+
+                       //const writeStream = fs.createWriteStream(dest);
+                       duplex.pipe(fs.createWriteStream(process.cwd()+'/temp.txt'));
+                       //
+                       // duplex.pipe(process.stdout);
+                   },6000)
+
+               // });
 
             });
             // process.stdout.on('pipe',(e)=>{

@@ -24,10 +24,10 @@ function on(...args) {
 //     wss.emit('open', '---------------');
 // };
 wss.onmessage = function (evt) {
-   console.log(evt)
+  // console.log(evt)
     bufferParse(evt.data).then((obj) => {
         try {
-            console.log(obj);
+        //    console.log(obj);
             // SEE IF THE EVENT DATA IS AN OBJECT
             //   let obj = await bufferParse(evt.data);
             if (obj.remoteEmit) {
