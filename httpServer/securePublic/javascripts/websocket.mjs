@@ -24,7 +24,7 @@ function on(...args) {
 //     wss.emit('open', '---------------');
 // };
 wss.onmessage = function (evt) {
-  // console.log(evt)
+  //console.log(evt)
     bufferParse(evt.data).then((obj) => {
         try {
         //    console.log(obj);
@@ -32,6 +32,7 @@ wss.onmessage = function (evt) {
             //   let obj = await bufferParse(evt.data);
             if (obj.remoteEmit) {
                 if (obj.reject) { // reject the promise with an error
+                    console.log('rej -',obj)
                     window[obj.emitter].emit(obj.eventName, obj);
                 } else {
 //               console.log('remote emmit',obj.eventName,obj.args)

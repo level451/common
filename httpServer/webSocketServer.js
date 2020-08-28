@@ -2,7 +2,7 @@ const lib = require('../newConsole').lib;
 const EventEmitter = require('events');
 const webSocketEmitter = new EventEmitter();
 const database = require('./database');
-const fs = require('fs')
+const fs = require('fs');
 //class MyEmitter extends EventEmitter {}
 module.exports = webSocketEmitter;
 var webSocket = {};
@@ -16,31 +16,49 @@ module.exports.startWebSocketServer = function (server) {
         ws.id = parameters.id;
         ws.stream = (parameters.stream) ? true : false;
         if (ws.stream) {
-
             console.log('stream connect--');
             // global.test = duplex
             ws.on('pong', heartbeat);
             ws.on('message', (x) => {
-               // console.log('stream message', x.toString());
+                // console.log('stream message', x.toString());
             });
             ws.on('close', () => {
                 console.log('stream sock close');
             });
-            ws.once('message', (m) => {
+            ws.once('message', (opts) => {
+                ( {fileName,filePath,destPath,fromCs6}=JSON.parse(opts))
                 const duplex = WebSock.createWebSocketStream(ws);
-                console.log('message once', m);
+                duplex.on('finish', (e) => {
+                    console.log('duplex pipe send end', e);
+                });
+                duplex.on('error', (e) => {
+                    console.log('duplex error', e);
+                });
+                console.log('message once', opts);
                 //ws.send(JSON.stringify({ready: true}), () => {
-                   setTimeout(()=>{
-                    console.log('piped:')
+                let fileStream, pipe;
+                if (!fromCs6) {
+                    fileStream = fs.createReadStream(filePath+fileName, {highWaterMark: 1024 * 1024 * 2});
+                    fileStream.on('data',()=>{process.stdout.write('.')})
 
-                       //const writeStream = fs.createWriteStream(dest);
-                       duplex.pipe(fs.createWriteStream(process.cwd()+'/temp.txt'));
-                       //
-                       // duplex.pipe(process.stdout);
-                   },6000)
+                    pipe = fileStream.pipe(duplex);
+                } else {
+                    fileStream = fs.createWriteStream(destPath + fileName, {highWaterMark: 1024 * 1024 * 2});
+                    pipe = duplex.pipe(fileStream);
+                }
+                pipe.on('error', (e) => {
+                    duplex.destroy(e)
+                    console.log(e);
+                });
+                fileStream.on('error', (e) => {
 
-               // });
-
+                    pipe.destroy(e);
+                    console.log(e);
+                });
+                fileStream.on('finish', (e) => {
+                    console.log('fileStream pipe  end', e);
+                });
+                // });
             });
             // process.stdout.on('pipe',(e)=>{
             //      console.log('on pipe',e)
@@ -132,11 +150,16 @@ module.exports.startWebSocketServer = function (server) {
                     // if (typeof (obj.args[0]) == 'object' && obj.args[0] != null) {
                     //     obj.args[0].timeStamp = new Date();
                     // }
-                    if (typeof (obj.args) == 'object' && obj.args != null && (obj.args instanceof Buffer) == false) {
+                    if ((obj.args instanceof Error) == false && typeof (obj.args) == 'object' && obj.args != null && (obj.args instanceof Buffer) == false) {
                         obj.args.timeStamp = new Date();
                     }
 //                    console.log('Websock emitter eventName', obj.eventName,obj);
-                    global[obj.emitter].emit(obj.eventName, obj.args);
+                    // 8/27/2020 todd - added rejct case
+                    if (obj.reject) {
+                        global[obj.emitter].emit(obj.eventName, obj);
+                    } else {
+                        global[obj.emitter].emit(obj.eventName, obj.args);
+                    }
                 } else {
                     global[obj.emitter] = new EventEmitter();
                     console.trace('New emiter created - should not happen now', obj.emitter);
@@ -183,12 +206,15 @@ module.exports.startWebSocketServer = function (server) {
                         }));
                         //remoteEmit(obj.emitterName,obj.returnEventName,...args)
                     }).catch(function (args) {
+                        console.log(args);
                         ws.send(lib.JSON.bufferStringify({
                             remoteEmit: true,
                             reject: true,
                             emitter: obj.emitterName,
                             eventName: obj.returnEventName,
-                            args: args.toString()
+                            //8.27 removed to string
+                            args: (args instanceof Error) ? args.toString() : args
+                            // args: args.toString()
                         }));
                     });
                 } else {

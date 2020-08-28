@@ -18,6 +18,8 @@ util = require("util");
 //
 const oldconsole = console;
 module.exports = {
+   time:oldconsole.time,
+    timeEnd:oldconsole.timeEnd,
     lib : require('./lib'),
     log: function () {
         Error.stackTraceLimit = 2;
