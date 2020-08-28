@@ -3,6 +3,7 @@ const EventEmitter = require('events');
 const webSocketEmitter = new EventEmitter();
 const database = require('./database');
 const fs = require('fs');
+const {pipeline} = require('stream');
 //class MyEmitter extends EventEmitter {}
 module.exports = webSocketEmitter;
 var webSocket = {};
@@ -16,53 +17,7 @@ module.exports.startWebSocketServer = function (server) {
         ws.id = parameters.id;
         ws.stream = (parameters.stream) ? true : false;
         if (ws.stream) {
-            console.log('stream connect--');
-            // global.test = duplex
-            ws.on('pong', heartbeat);
-            ws.on('message', (x) => {
-                // console.log('stream message', x.toString());
-            });
-            ws.on('close', () => {
-                console.log('stream sock close');
-            });
-            ws.once('message', (opts) => {
-                ( {fileName,filePath,destPath,fromCs6}=JSON.parse(opts))
-                const duplex = WebSock.createWebSocketStream(ws);
-                duplex.on('finish', (e) => {
-                    console.log('duplex pipe send end', e);
-                });
-                duplex.on('error', (e) => {
-                    console.log('duplex error', e);
-                });
-                console.log('message once', opts);
-                //ws.send(JSON.stringify({ready: true}), () => {
-                let fileStream, pipe;
-                if (!fromCs6) {
-                    fileStream = fs.createReadStream(filePath+fileName, {highWaterMark: 1024 * 1024 * 2});
-                    fileStream.on('data',()=>{process.stdout.write('.')})
-
-                    pipe = fileStream.pipe(duplex);
-                } else {
-                    fileStream = fs.createWriteStream(destPath + fileName, {highWaterMark: 1024 * 1024 * 2});
-                    pipe = duplex.pipe(fileStream);
-                }
-                pipe.on('error', (e) => {
-                    duplex.destroy(e)
-                    console.log(e);
-                });
-                fileStream.on('error', (e) => {
-
-                    pipe.destroy(e);
-                    console.log(e);
-                });
-                fileStream.on('finish', (e) => {
-                    console.log('fileStream pipe  end', e);
-                });
-                // });
-            });
-            // process.stdout.on('pipe',(e)=>{
-            //      console.log('on pipe',e)
-            //  })
+            streamHandler(ws);
             return;
         }
         // make sure we allow this connection
@@ -206,7 +161,6 @@ module.exports.startWebSocketServer = function (server) {
                         }));
                         //remoteEmit(obj.emitterName,obj.returnEventName,...args)
                     }).catch(function (args) {
-                        console.log(args);
                         ws.send(lib.JSON.bufferStringify({
                             remoteEmit: true,
                             reject: true,
@@ -575,18 +529,77 @@ webSocketEmitter.send = function (id, data) {
     webSocket[id].send(lib.JSON.bufferStringify(data));
     //webSocket[id].send(JSON.stringify(data));
 };
-//
-// function jsonToBuffer(json) {
-//     if ((json.buffer instanceof Buffer) == false ){
-//         return json
-//     }
-//     let jsonString = JSON.stringify(json,(a,b)=>{return (a =='buffer')?undefined:b}); // dont put buffer stringified json
-//     return Buffer.concat([Buffer.from(Uint16Array.from([jsonString.length]).buffer), Buffer.from(jsonString), json.buffer]);
-// }
-// function bufferToJson(buffer) {
-// // first 2 in buffer are
-//     if ((buffer instanceof Buffer ) == false){
-//         return buffer
-//     }
-//     return {...JSON.parse(buffer.slice(2,buffer.readUInt16LE(0)+2).toString()),buffer:buffer.slice(buffer.readInt16LE(0)+2)}//,
-// }
+
+
+function streamHandler(streamWs) {
+    console.log('stream connect--');
+    // global.test = duplex
+    streamWs.on('pong', heartbeat);
+    streamWs.on('close', (e) => {
+        if (e == 1006) { // 1006 socket closed from remote?
+            fs.stat(destPath + fileName, (e, stats) => {
+                if (fromCs6) { // this (mc) is in write mode
+                    //check to see if the file write failed
+                    if (stats && stats.size == 0) {
+                        fs.unlinkSync(destPath + fileName);
+                        console.log('Deleting zero file size', destPath + fileName);
+                    }
+                }
+            });
+        }
+        console.log('stream sock close', e);
+    });
+    streamWs.on('message', (msg) => {
+        console.log(msg);
+    });
+    streamWs.once('message', (opts) => {
+        ({fileName, filePath, destPath, fromCs6} = JSON.parse(opts));
+        console.log('message once', opts);
+        let fileStream, pipe;
+        if (!fromCs6) {
+            pipeline(
+                fs.createReadStream(filePath + fileName, {highWaterMark: 1024 * 1024 * 2, autoDestroy: false}).on('error', (e) => {
+                    console.log('fs', e);
+                }),
+                WebSock.createWebSocketStream(streamWs, {autoDestroy: false}),
+                err => {
+                    if (err) {
+                        console.log('pipeline error', err);
+                    } else {
+                        console.log('pipeline - done');
+                    }
+                }
+            );
+        } else {
+            pipeline(
+                WebSock.createWebSocketStream(streamWs),
+                fs.createWriteStream(destPath + fileName, {highWaterMark: 1024 * 1024 * 2}),
+                err => {
+                    if (err) {
+                        console.log('pipeline error', err);
+                        //      reject(err)
+                    } else {
+                        console.log('done');
+                        //    resolve('finished')
+                    }
+                }
+            );
+            // let sockStream = WebSock.createWebSocketStream(streamWs, {autoDestroy: false,autoClose:false}).on('error', (e) => {
+            //     console.log('ws', e);
+            // });
+            // let fileStream = fs.createWriteStream(destPath + fileName, {highWaterMark: 1024 * 1024 * 2, autoDestroy: false,autoClose:false}).on('error', (e) => {
+            //     console.log('fs', e);
+            // });
+            // sockStream.pipe(fileStream).on('error', (e) => {
+            //     console.log('pipe', e);
+            // });
+        }
+    });
+
+
+    function heartbeat() {
+        this.lastPing = new Date();
+        this.isAlive = true;
+    }
+}
+
