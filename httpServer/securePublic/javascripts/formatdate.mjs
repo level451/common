@@ -33,6 +33,13 @@ export function toMMDDHHMM(inDate) {
     return padl(d.getMonth() + 1) + '/' + padl(d.getDate()) + ' ' + padl(d.getHours()) + ':' + padl(d.getMinutes());
 }
 
+export function toMMDDYYYYHHMMSS(inDate) {
+    let d = new Date(inDate);
+    if (isNaN(d)) {
+        return ' Invalid Date', d;
+    }
+    return padl(d.getMonth() + 1) + '/' + padl(d.getDate()) + '/'+d.getFullYear()+' ' + padl(d.getHours()) + ':' + padl(d.getMinutes()) + ':' + padl(d.getSeconds());
+}
 
 export function toMMDD(inDate) {
     let d = new Date(inDate);

@@ -52,13 +52,15 @@ module.exports.startWebSocketServer = function (server) {
             });
         }
         // in case of duplicate ids
-        if (webSocket[ws.id] && ws.systemType != 'RIO') {
-            ws.id += '.' + Math.random().toString();
+        if (webSocket[ws.id]) {
+            if (ws.systemType != 'RIO' && ws.systemType != 'CS6') {
+                ws.id += '.' + Math.random().toString();
+            }
         }
         console.log('New WebSocket Connection ID:' + ((ws.id) ? ws.id.substring(0, 8) : '?' + ' systemType:') + ' ' + ((ws.systemType) ? ws.systemType : '?') +
             ' Total Connections: ', wss.clients.size);
         webSocket[ws.id] = ws;
-        //webSocket[ws.id] = ws;
+//webSocket[ws.id] = ws;
         if (!ws.stream) {
             if (ws.systemType == 'browser') {
                 webSocketEmitter.emit('browserConnect', ws.id);
@@ -236,7 +238,8 @@ module.exports.startWebSocketServer = function (server) {
                 webSocketEmitter.emit('close', {id: ws.id, systemType: ws.systemType, connections: wss.clients.size});
             }
         });
-    });
+    })
+    ;
     const interval = setInterval(function ping() {
         wss.clients.forEach(function each(ws) {
             if (ws.isAlive === false) {
@@ -258,7 +261,8 @@ module.exports.startWebSocketServer = function (server) {
         this.lastPing = new Date();
         this.isAlive = true;
     }
-};
+}
+;
 
 
 function subscribeEvents(ws) {
@@ -538,7 +542,7 @@ function streamHandler(streamWs) {
     streamWs.on('close', (e) => {
         if (e == 1006) { // 1006 socket closed from remote?
             fs.stat(destPath + fileName, (e, stats) => {
-                if (fromCs6) { // this (mc) is in write mode
+                if (readCs6) { // this (mc) is in write mode
                     //check to see if the file write failed
                     if (stats && stats.size == 0) {
                         fs.unlinkSync(destPath + fileName);
@@ -550,13 +554,19 @@ function streamHandler(streamWs) {
         console.log('stream sock close', e);
     });
     streamWs.on('message', (msg) => {
-        console.log(msg);
+        // console.log(msg);
     });
     streamWs.once('message', (opts) => {
-        ({fileName, filePath, destPath, fromCs6} = JSON.parse(opts));
+        ({sourceType, fileName, filePath, destPath, readCs6} = JSON.parse(opts));
+        if (sourceType == 'mongo') {
+            console.log('mongo');
+            // WebSock.createWebSocketStream(streamWs).pipe(process.stdout)
+            WebSock.createWebSocketStream(streamWs).pipe(fs.createWriteStream('mc.gz'));
+            return;
+        }
         console.log('message once', opts);
         let fileStream, pipe;
-        if (!fromCs6) {
+        if (!readCs6) {
             pipeline(
                 fs.createReadStream(filePath + fileName, {highWaterMark: 1024 * 1024 * 2, autoDestroy: false}).on('error', (e) => {
                     console.log('fs', e);
@@ -584,15 +594,6 @@ function streamHandler(streamWs) {
                     }
                 }
             );
-            // let sockStream = WebSock.createWebSocketStream(streamWs, {autoDestroy: false,autoClose:false}).on('error', (e) => {
-            //     console.log('ws', e);
-            // });
-            // let fileStream = fs.createWriteStream(destPath + fileName, {highWaterMark: 1024 * 1024 * 2, autoDestroy: false,autoClose:false}).on('error', (e) => {
-            //     console.log('fs', e);
-            // });
-            // sockStream.pipe(fileStream).on('error', (e) => {
-            //     console.log('pipe', e);
-            // });
         }
     });
 

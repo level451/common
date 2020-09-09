@@ -118,7 +118,7 @@ database.updateEventLog = async function (data) {
     database.emit('newEventLogEntry', data);
 };
 database.getEventLog = async function (limit = 1000, skip = 0, filter = {}, newestFirst = false) {
-    // console.log(filter);
+     console.log(filter);
     try {
         let rslt = await dbo.collection('eventLog').find(filter).limit(limit).skip(skip).project({}).sort({_id: (newestFirst) ? -1 : 1}).toArray();
         return rslt;
