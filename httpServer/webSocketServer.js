@@ -4,12 +4,14 @@ const webSocketEmitter = new EventEmitter();
 const database = require('./database');
 const fs = require('fs');
 const {pipeline} = require('stream');
+const {spawn} = require('child_process');
 //class MyEmitter extends EventEmitter {}
 module.exports = webSocketEmitter;
 var webSocket = {};
+let savedStreams = {};
 const WebSock = require('ws');
 module.exports.startWebSocketServer = function (server) {
-    const wss = new WebSock.Server({server});
+    const wss = new WebSock.Server({server, clientTracking: true});
     wss.on('connection', function connection(ws, req) {
         console.log('wsconnect--------------------------');
         const parameters = require('url').parse(req.url, true).query;
@@ -17,6 +19,7 @@ module.exports.startWebSocketServer = function (server) {
         ws.id = parameters.id;
         ws.stream = (parameters.stream) ? true : false;
         if (ws.stream) {
+            ws.parameters = parameters;
             streamHandler(ws);
             return;
         }
@@ -61,18 +64,18 @@ module.exports.startWebSocketServer = function (server) {
             ' Total Connections: ', wss.clients.size);
         webSocket[ws.id] = ws;
 //webSocket[ws.id] = ws;
-        if (!ws.stream) {
-            if (ws.systemType == 'browser') {
-                webSocketEmitter.emit('browserConnect', ws.id);
-                //console.log('Browser Connected - systemType', ws.systemType,ws.id);
-            } else {
-                webSocketEmitter.emit('connect', {id: ws.id, systemType: ws.systemType});
-                if (ws.systemType == 'RIO') {
-                    console.log('Rio Connected - systemType & connected', ws.systemType, ws.id, global.settings.connectedRios[ws.id].connected);
-                    settings.connectedRios[ws.id].connected = true;
-                }
+        //  if (!ws.stream) {
+        if (ws.systemType == 'browser') {
+            webSocketEmitter.emit('browserConnect', ws.id);
+            //console.log('Browser Connected - systemType', ws.systemType,ws.id);
+        } else {
+            webSocketEmitter.emit('connect', {id: ws.id, systemType: ws.systemType});
+            if (ws.systemType == 'RIO') {
+                console.log('Rio Connected - systemType & connected', ws.systemType, ws.id, global.settings.connectedRios[ws.id].connected);
+                settings.connectedRios[ws.id].connected = true;
             }
         }
+        //   }
         ws.on('message', function incoming(message) {
             obj = lib.JSON.bufferParse(message);
             //     console.log(message)
@@ -536,10 +539,23 @@ webSocketEmitter.send = function (id, data) {
 
 
 function streamHandler(streamWs) {
-    console.log('stream connect--');
+    // let id = streamWs.id.replace('stream', '');
+    console.log('stream connect--', streamWs.id, streamWs.parameters.streamId);
+    let socketStream = WebSock.createWebSocketStream(streamWs);
+    if (streamWs.parameters.streamId) {
+        console.log('streamId', streamWs.parameters.streamId);
+        savedStreams[streamWs.parameters.streamId] = socketStream;
+        socketStream.streamId = streamWs.parameters.streamId;
+    }
     // global.test = duplex
     streamWs.on('pong', heartbeat);
+    socketStream.on('close', () => {
+        console.log('asdfasedfasdfasdf');
+        delete savedStreams[socketStream.streamId];
+        console.log('Saved streams:', Object.keys(savedStreams).length);
+    });
     streamWs.on('close', (e) => {
+        //  delete savedStreams[streamWs.parameters.streamId];
         if (e == 1006) { // 1006 socket closed from remote?
             fs.stat(destPath + fileName, (e, stats) => {
                 if (readCs6) { // this (mc) is in write mode
@@ -552,45 +568,118 @@ function streamHandler(streamWs) {
             });
         }
         console.log('stream sock close', e);
+        console.log('Saved streams:', Object.keys(savedStreams).length);
     });
-    streamWs.on('message', (msg) => {
-        // console.log(msg);
-    });
-    streamWs.once('message', (opts) => {
-        ({sourceType, fileName, filePath, destPath, readCs6} = JSON.parse(opts));
-        if (sourceType == 'mongo') {
-            console.log('mongo');
-            // WebSock.createWebSocketStream(streamWs).pipe(process.stdout)
-            WebSock.createWebSocketStream(streamWs).pipe(fs.createWriteStream('mc.gz'));
+    // streamWs.on('message', (msg) => {
+    //      console.log(msg);
+    // });
+    if (streamWs.parameters.connectToStreamId) {
+        if (!savedStreams[streamWs.parameters.connectToStreamId]) {
+            streamWs.send('stream not found' + streamWs.parameters.connectToStreamId);
+            streamWs.close();
+        } else {
+            // bridge the streams
+            console.log('@ bridge');
+            let cs6Stream = savedStreams[streamWs.parameters.connectToStreamId];
+            let browseStream = WebSock.createWebSocketStream(streamWs);
+            cs6Stream.pipe(browseStream);
+            browseStream.pipe(cs6Stream);
             return;
         }
-        console.log('message once', opts);
-        let fileStream, pipe;
-        if (!readCs6) {
+    }
+    streamWs.once('message', (opts) => {
+        ({
+            sourceType,
+            destType,
+            fileName,
+            filePath,
+            destName,
+            destPath,
+            readCs6
+        } = JSON.parse(opts));
+        //   console.log(opts);
+        if (readCs6) {
+            // we need to make a write stream
+            let stream;
+            switch (destType) {
+                case 'browser':
+                    console.log('@browser ws');
+                    // do notheing = wait for browser to connect
+                    break;
+                case'shell':
+                    let socketStream = WebSock.createWebSocketStream(streamWs);
+                    let p1 = process.stdin.pipe(socketStream)
+                        .on('end', (e) => {
+                            p1.destroy(); // for some reason this needs to be here
+                        })
+                        .on('error', (e) => {
+                            console.log('p1 error', e);
+                        });
+                    let p2 = socketStream.pipe(process.stdout);
+                    //console.log('---------------', socketStream.listenerCount('close'));
+                    break;
+                case'mongo':
+                    let s = spawn('mongorestore',
+                        ['--archive', '--nsFrom=cs6-' + id + '.*', '--nsTo=cs6b-' + id + '.*', '--drop', '--quiet', '--gzip'],
+                        {
+                            //spawn('dir' ,[], {
+                            stdio: [
+                                'pipe', // Use parent's stdin for child.
+                                'pipe', // Pipe child's stdout to parent.
+                                process.stdout // Direct child's stderr to a file.
+                            ]
+                        }).on('error', (e) => {
+                        console.log('spawn error', e);
+                    });
+                    stream = s.stdin;
+                    setUpPipe();
+                    break;
+                case'file':
+                    console.log('@ffile with timeout');
+                    stream = fs.createWriteStream(destPath + destName, {highWaterMark: 1024 * 1024 * 2}).on('error', (e) => {
+                        console.log('file write stream error', e);
+                    });
+                    setUpPipe();
+                    break;
+            }
+
+
+            function setUpPipe() {
+                pipeline(
+                    socketStream,
+                    stream,
+                    err => {
+                        if (err) {
+                            console.log('pipeline error', err);
+                            //      reject(err)
+                        } else {
+                            console.log('done');
+                            delete savedStreams[socketStream.streamId];
+                            console.log('Saved streams:', Object.keys(savedStreams).length);
+                            //    resolve('finished')
+                        }
+                    }
+                );
+            }
+        } else {
+            //read stream
+            switch (destType) {
+                case'mongo':
+                    break;
+                case'file':
+                    stream = fs.createReadStream(filePath + fileName, {highWaterMark: 1024 * 1024 * 2}).on('error', (e) => {
+                        console.log('fs', e);
+                    });
+                    break;
+            }
             pipeline(
-                fs.createReadStream(filePath + fileName, {highWaterMark: 1024 * 1024 * 2, autoDestroy: false}).on('error', (e) => {
-                    console.log('fs', e);
-                }),
-                WebSock.createWebSocketStream(streamWs, {autoDestroy: false}),
+                stream,
+                socketStream,
                 err => {
                     if (err) {
                         console.log('pipeline error', err);
                     } else {
                         console.log('pipeline - done');
-                    }
-                }
-            );
-        } else {
-            pipeline(
-                WebSock.createWebSocketStream(streamWs),
-                fs.createWriteStream(destPath + fileName, {highWaterMark: 1024 * 1024 * 2}),
-                err => {
-                    if (err) {
-                        console.log('pipeline error', err);
-                        //      reject(err)
-                    } else {
-                        console.log('done');
-                        //    resolve('finished')
                     }
                 }
             );
