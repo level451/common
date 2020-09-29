@@ -74,6 +74,9 @@ module.exports = function (startOptions = {}) {
             id: (localSettings && localSettings.ServiceInfo) ? localSettings.ServiceInfo.id : '?'
         });
     });
+    app.get('/stream',function(req,res){
+        res.render('audioStream.ejs',{})
+    })
     app.post('/login', urlencodedParser, function (req, res) {
         processLogin(req, res);
     });

@@ -5,6 +5,7 @@ const database = require('./database');
 const fs = require('fs');
 const {pipeline} = require('stream');
 const {spawn} = require('child_process');
+const portAudio = require('naudiodon');
 //class MyEmitter extends EventEmitter {}
 module.exports = webSocketEmitter;
 var webSocket = {};
@@ -539,33 +540,25 @@ webSocketEmitter.send = function (id, data) {
 
 
 function streamHandler(streamWs) {
-    // let id = streamWs.id.replace('stream', '');
+    let id = streamWs.id; //. replace('stream', '');
     console.log('stream connect--', streamWs.id, streamWs.parameters.streamId);
-    let socketStream = WebSock.createWebSocketStream(streamWs);
-    if (streamWs.parameters.streamId) {
-        console.log('streamId', streamWs.parameters.streamId);
-        savedStreams[streamWs.parameters.streamId] = socketStream;
-        socketStream.streamId = streamWs.parameters.streamId;
-    }
     // global.test = duplex
     streamWs.on('pong', heartbeat);
-    socketStream.on('close', () => {
-        console.log('asdfasedfasdfasdf');
-        delete savedStreams[socketStream.streamId];
-        console.log('Saved streams:', Object.keys(savedStreams).length);
-    });
     streamWs.on('close', (e) => {
         //  delete savedStreams[streamWs.parameters.streamId];
         if (e == 1006) { // 1006 socket closed from remote?
-            fs.stat(destPath + fileName, (e, stats) => {
-                if (readCs6) { // this (mc) is in write mode
-                    //check to see if the file write failed
-                    if (stats && stats.size == 0) {
-                        fs.unlinkSync(destPath + fileName);
-                        console.log('Deleting zero file size', destPath + fileName);
+            try {
+                fs.stat(destPath + fileName, (e, stats) => {
+                    if (readCs6) { // this (mc) is in write mode
+                        //check to see if the file write failed
+                        if (stats && stats.size == 0) {
+                            fs.unlinkSync(destPath + fileName);
+                            console.log('Deleting zero file size', destPath + fileName);
+                        }
                     }
-                }
-            });
+                });
+            } catch (e) {
+            }
         }
         console.log('stream sock close', e);
         console.log('Saved streams:', Object.keys(savedStreams).length);
@@ -573,10 +566,43 @@ function streamHandler(streamWs) {
     // streamWs.on('message', (msg) => {
     //      console.log(msg);
     // });
+    if (streamWs.parameters.connectToAudioStream) {
+        console.log('audioStream');
+        let audioIn = new portAudio.AudioIO({
+            inOptions: {
+                channelCount: 2,
+                sampleFormat: portAudio.SampleFormat16Bit,
+                sampleRate: 44100,
+                deviceId: -1, // Use -1 or omit the deviceId to select the default device
+                closeOnError: true // Close the stream if an audio error is detected, if set false then just log the error
+            }
+        });
+        //console.log(portAudio.getDevices());
+        pipeline(
+            audioIn,
+            WebSock.createWebSocketStream(streamWs),
+            err => {
+                if (err) {
+                    console.log('pipeline error', err);
+                    //      reject(err)
+                } else {
+                    console.log('done');
+                    // resolve('finished')
+                }
+            }
+    )
+        //audioIn.pipe(WebSock.createWebSocketStream(streamWs));
+        // audioIn.pipe(fs.createWriteStream('./temp/test.raw'))
+        audioIn.start();
+        //  fs.createReadStream(filePath, ).pipe(res);
+        return;
+    }
     if (streamWs.parameters.connectToStreamId) {
+        console.log('connect to streamid', streamWs.parameters.connectToStreamId);
         if (!savedStreams[streamWs.parameters.connectToStreamId]) {
             streamWs.send('stream not found' + streamWs.parameters.connectToStreamId);
             streamWs.close();
+            return;
         } else {
             // bridge the streams
             console.log('@ bridge');
@@ -598,16 +624,28 @@ function streamHandler(streamWs) {
             readCs6
         } = JSON.parse(opts));
         //   console.log(opts);
+        let socketStream = WebSock.createWebSocketStream(streamWs);
+        socketStream.on('close', () => {
+            console.log('asdfasedfasdfasdf');
+            delete savedStreams[socketStream.streamId];
+            console.log('Saved streams:', Object.keys(savedStreams).length);
+        });
         if (readCs6) {
             // we need to make a write stream
+            console.log('@writing console side');
             let stream;
             switch (destType) {
                 case 'browser':
+                    if (streamWs.parameters.streamId) {
+                        console.log('streamId', streamWs.parameters.streamId);
+                        savedStreams[streamWs.parameters.streamId] = socketStream;
+                        socketStream.streamId = streamWs.parameters.streamId;
+                    }
                     console.log('@browser ws');
                     // do notheing = wait for browser to connect
                     break;
                 case'shell':
-                    let socketStream = WebSock.createWebSocketStream(streamWs);
+                    //let socketStream = WebSock.createWebSocketStream(streamWs); //removed without testing 9.25.2020
                     let p1 = process.stdin.pipe(socketStream)
                         .on('end', (e) => {
                             p1.destroy(); // for some reason this needs to be here
@@ -619,6 +657,7 @@ function streamHandler(streamWs) {
                     //console.log('---------------', socketStream.listenerCount('close'));
                     break;
                 case'mongo':
+                    console.log('@mongo', id);
                     let s = spawn('mongorestore',
                         ['--archive', '--nsFrom=cs6-' + id + '.*', '--nsTo=cs6b-' + id + '.*', '--drop', '--quiet', '--gzip'],
                         {
@@ -630,12 +669,14 @@ function streamHandler(streamWs) {
                             ]
                         }).on('error', (e) => {
                         console.log('spawn error', e);
-                    });
+                    }).on('exit', (e) => console.log('cp on exit', e));
                     stream = s.stdin;
+                    //stream = process.stdout
+                    // socketStream.pipe(stream)
                     setUpPipe();
                     break;
                 case'file':
-                    console.log('@ffile with timeout');
+                    console.log('@file with timeout');
                     stream = fs.createWriteStream(destPath + destName, {highWaterMark: 1024 * 1024 * 2}).on('error', (e) => {
                         console.log('file write stream error', e);
                     });
@@ -645,8 +686,10 @@ function streamHandler(streamWs) {
 
 
             function setUpPipe() {
+                console.log('@pipeline');
                 pipeline(
                     socketStream,
+                    // process.stdout,
                     stream,
                     err => {
                         if (err) {
@@ -656,7 +699,7 @@ function streamHandler(streamWs) {
                             console.log('done');
                             delete savedStreams[socketStream.streamId];
                             console.log('Saved streams:', Object.keys(savedStreams).length);
-                            //    resolve('finished')
+                            // resolve('finished')
                         }
                     }
                 );
