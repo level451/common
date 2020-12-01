@@ -524,7 +524,7 @@ module.exports.listenHttp = function () {
                 if (err) {
                     throw err;
                 }
-                console.log('Http Server Listening at: Http://' + udpServer.internetIP() + ':' + JSON.stringify(server.address().port));
+                console.log('Http Server Listening at: http://' + udpServer.internetIP() + ':' + JSON.stringify(server.address().port));
                 localSettings.network.internetIP = udpServer.internetIP();
             }
         );
