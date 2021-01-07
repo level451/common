@@ -1,14 +1,17 @@
 // options useHttps : false
 const webSocketServer = require('./webSocketServer');
 const database = require('./database');
+
 webSocketServer.on('test', function (x) {
     console.log(x);
 });
+
 var options;
 const express = require('express');
 const bcrypt = require('bcrypt');
 const app = express();
 const fs = require('fs');
+
 module.exports = function (startOptions = {}) {
     options = startOptions;
     if (!options.useHttps) options.useHttps = false;
@@ -54,6 +57,7 @@ module.exports = function (startOptions = {}) {
         try {
             uid = database.ObjectID(req.signedCookies.uid);
         } catch (e) {
+
         }
         dbo.collection('Users').findOne({_id: uid}).then((o) => {
             dbo.collection('requestLog').insertOne({

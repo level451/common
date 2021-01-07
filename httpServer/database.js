@@ -92,7 +92,7 @@ database.addUsers = async function (data) {
         data.hash = await bcrypt.hash(data.hash, 2);
         data.mustChangePassword = true;
         data.preferences = {
-            webTheme: 'default'
+            webTheme: 'Default'
         };
         let rslt = await dbo.collection('Users').insertOne(data);
         return rslt;
