@@ -402,7 +402,7 @@ module.exports = function (startOptions = {}) {
                             'Accept': 'application/json'
                         }
                     }, function (error, response, body) {
-                        if (response.statusCode == '200') {
+                        if (response && response.statusCode == '200') {
                             try {
                                 req.ipInfo = JSON.parse(body);
                             } catch (e) {
