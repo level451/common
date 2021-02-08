@@ -16,7 +16,7 @@
     <br>
     <% if (locals.javascript && locals.javascript.userDocument ){ %>
     <div id="userName"> <%= global.localSettings.ServiceInfo.id + ' - ' +locals.javascript.userDocument.displayName%></div>
-    <% } else if (id){%>
+    <% } else if (typeof (id) != 'undefined'){%>
         <div id="userName"> <%= id%></div>
     <%}%>
     <br>
