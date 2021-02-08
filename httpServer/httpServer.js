@@ -406,14 +406,16 @@ module.exports = function (startOptions = {}) {
                             'Accept': 'application/json'
                         }
                     }, function (error, response, body) {
-                        if (response && response.statusCode == '200') {
+                        if (error){
+                            console.log('error resovling api.ipdata',error)
+                        } else if (response && response.statusCode == '200') {
                             try {
                                 req.ipInfo = JSON.parse(body);
                             } catch (e) {
                                 console.log(e);
                             }
                         } else {
-                            console.log(response.statusCode, body, requestAddress);
+                            console.log(response, body, requestAddress);
                         }
                         /*******
                          */
