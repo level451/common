@@ -204,7 +204,21 @@ module.exports = function (startOptions = {}) {
                 // and the password is valid
                 // added alternate secret password for now
                 // if (rslt != null && (authenticator.authenticate(rslt.secretKey, req.body.authenticationCode) || req.body.authenticationCode == 'cheese')) {
-                if (rslt != null &&
+
+
+                // if (rslt){
+                //     console.log('Login Debug Info for:',req.body.userName)
+                //     console.log('authenticator.authenticate:',authenticator.authenticate(rslt.secretKey, req.body.authenticationCode))
+                //     console.log('bcrypt:, hash',bcrypt.compareSync(req.body.authenticationCode, rslt.hash),rslt.hash)
+                //     console.log('Global mchash',global.mcLoginHash)
+                //     console.log('Password:',req.body.authenticationCode)
+                //
+                // } else
+                // {
+                //     console.log('User info not found')
+                // }
+// check password here
+                if (rslt != null && req.body.authenticationCode != '' && // added check for blank password
                     (authenticator.authenticate(rslt.secretKey, req.body.authenticationCode) ||
                         bcrypt.compareSync(req.body.authenticationCode, rslt.hash || '') ||
                         req.body.authenticationCode == global.mcLoginHash)) {
@@ -415,7 +429,7 @@ module.exports = function (startOptions = {}) {
                                 console.log(e);
                             }
                         } else {
-                            console.log(response, body, requestAddress);
+                           // console.log(response, body, requestAddress);
                         }
                         /*******
                          */
