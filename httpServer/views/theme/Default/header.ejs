@@ -14,8 +14,8 @@
 
     <p id="pagename"> <%= pageName %></p>
     <br>
-    <% if (locals.javascript && locals.javascript.userDocument ){ %>
-    <div id="userName"> <%= global.localSettings.ServiceInfo.id + ' - ' +locals.javascript.userDocument.displayName%></div>
+    <% if (locals.javascript && locals.javascript.userDocument && locals.settings){ %>
+    <div id="userName"> <%= global.settings.cs6Location + ' ('+global.localSettings.ServiceInfo.id + ') - ' +locals.javascript.userDocument.displayName%></div>
     <% } else if (typeof (id) != 'undefined'){%>
         <div id="userName"> <%= id%></div>
     <%}%>

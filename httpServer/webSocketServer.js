@@ -79,6 +79,7 @@ module.exports.startWebSocketServer = function (server) {
         //   }
         ws.on('message', function incoming(message) {
             obj = lib.JSON.bufferParse(message);
+           console.log('at websocket ',obj)
             //     console.log(message)
             //     try {
             //         var obj = JSON.parse(message);
@@ -207,6 +208,7 @@ module.exports.startWebSocketServer = function (server) {
                 }
             } else {
                 // no other case applies emit the data to be processed elsewhere
+
                 if (obj.emit) {
                     webSocketEmitter.emit(obj.emit, obj, ws);
                 } else {

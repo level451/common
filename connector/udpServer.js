@@ -101,7 +101,7 @@ udpSocket.startUdpServer = function (usesaNet = false) {
                 udpSocket.addMembership('224.0.0.49', udpAddress); // dont care what interface right now
                 console.log(`(MAIN) UDP Multicast Bound to 224.0.0.49 IFace:${udpAddress}`);
             } catch (e) {
-                console.log('udpaddmembership failed:', e);
+                console.log('udpaddmembership failed:', e, ip[0].address);
                 //process.exit(100);
             }
             resolve();
