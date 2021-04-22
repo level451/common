@@ -5,7 +5,7 @@
 }
 .menu{
     padding:  8px 8px 8px 32px;
-    font-size: 25px;
+    font-size: 20px;
     text-decoration: underline;
     font-weight: bold;
     color: #0464ba;
@@ -13,7 +13,9 @@
     margin-left:30px;
 
 }
-
+a{
+    height:20px;
+}
 .sidenav {
     height: 100%;
     margin-top: 120px;
@@ -22,18 +24,18 @@
     z-index: 1;
     top: 0;
     left: 0;
-    background-color:#94bddf;
+    background-color: #aedf94;
     overflow-x: hidden;
     transition: 0.5s;
-    padding-top: 60px;
+    padding-top: 0px;
     border-top: solid 1px #717171;
     border-right: solid 1px #717171;
 }
 
 .sidenav a,.sidenav details {
-    padding: 8px 8px 8px 32px;
+    padding: 2px 2px 2px 32px;
     text-decoration: none;
-    font-size: 25px;
+    font-size: 20px;
     color: #717171;
     display: block;
 }
@@ -56,7 +58,7 @@
 
 @media screen and (max-width:750px) {
     .sidenav {
-        margin-top: 106px;
+        margin-top: 109px;
     }
 
     .sidenav a,details {
