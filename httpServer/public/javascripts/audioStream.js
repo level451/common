@@ -5,19 +5,27 @@ function load(){
         encoding: '16bitInt',
         channels: 2,
         sampleRate: 44100,
-        flushingTime: 100
+        flushingTime: 50
     });
+    cs6Stream()
 }
 
 async function cs6Stream(id) {
+   let wsStream
+    if (location.protocol === 'https:') {
+        wsStream = new WebSocket('wss://' + window.location.hostname + ':' + window.location.port +
+            '/?systemType=browser&stream=yes&connectToAudioStream=yes');
+        console.log('Using Secure Websocket');
+    } else {
+        wsStream = new WebSocket('ws://' + window.location.hostname + ':' + window.location.port +
+            '/?systemType=browser&stream=yes&connectToAudioStream=yes');
+        console.log('Using Standard Websocket');
+    }
 
-    let wsStream = new WebSocket('ws://' + window.location.hostname + ':' + window.location.port +
-        '/?systemType=browser&stream=yes&connectToAudioStream=yes');
     wsStream.onmessage = (async (msg)=>{
         msg.data.arrayBuffer().then((data)=>{
             player.feed( new Uint16Array(data));
 
-            console.log(data);
 
         })
      //   console.log(await msg.data.text())

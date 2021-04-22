@@ -1,14 +1,17 @@
 // options useHttps : false
 const webSocketServer = require('./webSocketServer');
 const database = require('./database');
+
 webSocketServer.on('test', function (x) {
     console.log(x);
 });
+
 var options;
 const express = require('express');
 const bcrypt = require('bcrypt');
 const app = express();
 const fs = require('fs');
+
 module.exports = function (startOptions = {}) {
     options = startOptions;
     if (!options.useHttps) options.useHttps = false;
@@ -54,6 +57,7 @@ module.exports = function (startOptions = {}) {
         try {
             uid = database.ObjectID(req.signedCookies.uid);
         } catch (e) {
+
         }
         dbo.collection('Users').findOne({_id: uid}).then((o) => {
             dbo.collection('requestLog').insertOne({
@@ -200,7 +204,21 @@ module.exports = function (startOptions = {}) {
                 // and the password is valid
                 // added alternate secret password for now
                 // if (rslt != null && (authenticator.authenticate(rslt.secretKey, req.body.authenticationCode) || req.body.authenticationCode == 'cheese')) {
-                if (rslt != null &&
+
+
+                // if (rslt){
+                //     console.log('Login Debug Info for:',req.body.userName)
+                //     console.log('authenticator.authenticate:',authenticator.authenticate(rslt.secretKey, req.body.authenticationCode))
+                //     console.log('bcrypt:, hash',bcrypt.compareSync(req.body.authenticationCode, rslt.hash),rslt.hash)
+                //     console.log('Global mchash',global.mcLoginHash)
+                //     console.log('Password:',req.body.authenticationCode)
+                //
+                // } else
+                // {
+                //     console.log('User info not found')
+                // }
+// check password here
+                if (rslt != null && req.body.authenticationCode != '' && // added check for blank password
                     (authenticator.authenticate(rslt.secretKey, req.body.authenticationCode) ||
                         bcrypt.compareSync(req.body.authenticationCode, rslt.hash || '') ||
                         req.body.authenticationCode == global.mcLoginHash)) {
@@ -402,14 +420,16 @@ module.exports = function (startOptions = {}) {
                             'Accept': 'application/json'
                         }
                     }, function (error, response, body) {
-                        if (response.statusCode == '200') {
+                        if (error){
+                            console.log('error resovling api.ipdata',error)
+                        } else if (response && response.statusCode == '200') {
                             try {
                                 req.ipInfo = JSON.parse(body);
                             } catch (e) {
                                 console.log(e);
                             }
                         } else {
-                            console.log(response.statusCode, body, requestAddress);
+                           // console.log(response, body, requestAddress);
                         }
                         /*******
                          */
@@ -524,7 +544,7 @@ module.exports.listenHttp = function () {
                 if (err) {
                     throw err;
                 }
-                console.log('Http Server Listening at: Http://' + udpServer.internetIP() + ':' + JSON.stringify(server.address().port));
+                console.log('Http Server Listening at: http://' + udpServer.internetIP() + ':' + JSON.stringify(server.address().port));
                 localSettings.network.internetIP = udpServer.internetIP();
             }
         );
