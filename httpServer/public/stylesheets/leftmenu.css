@@ -6,8 +6,8 @@
 .menu{
     padding:  8px 8px 8px 32px;
     font-size: 20px;
-    text-decoration: underline;
-    font-weight: bold;
+    text-decoration: none;
+    font-weight: normal;
     color: #0464ba;
     display: block;
     margin-left:30px;
@@ -34,7 +34,7 @@
     padding: 8px 8px 8px 32px;
     text-decoration: none;
     font-size: 19px;
-    font-weight: bold;
+    font-weight: normal;
     color: #717171;
     display: block;
 }
